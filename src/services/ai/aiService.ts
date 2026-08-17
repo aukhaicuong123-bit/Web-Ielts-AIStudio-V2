@@ -39,22 +39,110 @@ export interface ReTestVerificationResponse {
 }
 
 export class AIService {
+      private static async fetchWithRetry(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+    maxAttempts = 3
+  ): Promise<Response> {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const response = await fetch(input, init);
+
+        if (response.ok) {
+          return response;
+        }
+
+        let errorBody = '';
+
+        try {
+          errorBody = await response.clone().text();
+        } catch {
+          // Ignore body parsing failure.
+        }
+
+        const isQuotaExhausted =
+          response.status === 429 &&
+          /quota exceeded|GenerateRequestsPerDay|free.?tier|RESOURCE_EXHAUSTED/i.test(
+            errorBody
+          );
+
+        const retryableStatuses = [500, 502, 503, 504];
+
+        const shouldRetry =
+          retryableStatuses.includes(response.status) ||
+          (response.status === 429 && !isQuotaExhausted);
+
+        if (!shouldRetry || attempt === maxAttempts - 1) {
+          return response;
+        }
+
+        const delayMs = 600 * Math.pow(2, attempt);
+
+        await new Promise((resolve) => {
+          setTimeout(resolve, delayMs);
+        });
+      } catch (error) {
+        lastError = error;
+
+        if (attempt === maxAttempts - 1) {
+          throw error;
+        }
+
+        const delayMs = 600 * Math.pow(2, attempt);
+
+        await new Promise((resolve) => {
+          setTimeout(resolve, delayMs);
+        });
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('AI request failed after retries');
+  }
   static async analyzeWriting(data: { 
     essayText: string; 
     prompt: string; 
     taskType: string; 
     topic: string 
   }): Promise<WritingAnalysisResponse> {
-    const res = await fetch('/api/analyze-writing', {
+    const res = await this.fetchWithRetry('/api/analyze-writing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(err.error || 'Lỗi khi chấm bài viết');
-    }
+  const err = await res.json().catch(() => ({ error: 'Request failed' }));
+
+  const errorMessage =
+    typeof err.error === 'string'
+      ? err.error
+      : err.error?.message || '';
+
+  if (
+    res.status === 429 &&
+    /quota exceeded|GenerateRequestsPerDay|free.?tier|RESOURCE_EXHAUSTED/i.test(
+      errorMessage
+    )
+  ) {
+    throw new Error(
+      'AI đang hết hạn mức miễn phí cho mô hình hiện tại. Bài viết của bạn vẫn được lưu; hãy thử lại sau khi hạn mức được cấp lại.'
+    );
+  }
+
+  if ([502, 503, 504].includes(res.status)) {
+    throw new Error(
+      'Dịch vụ AI đang quá tải tạm thời. Bài viết của bạn vẫn được lưu; hãy thử phân tích lại sau.'
+    );
+  }
+
+  throw new Error(
+    errorMessage || 'Lỗi khi chấm bài viết'
+  );
+}
 
     const json = await res.json();
     // Validate shape
@@ -70,7 +158,7 @@ export class AIService {
     prompt: string; 
     taskType: string 
   }): Promise<ImageAnalysisResponse> {
-    const res = await fetch('/api/analyze-image-essay', {
+    const res = await this.fetchWithRetry('/api/analyze-image-essay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -94,7 +182,7 @@ export class AIService {
     userSubmission: string; 
     originalSentence?: string 
   }): Promise<StepEvaluationResponse> {
-    const res = await fetch('/api/evaluate-step-submission', {
+    const res = await this.fetchWithRetry('/api/evaluate-step-submission', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -116,7 +204,7 @@ export class AIService {
     answers: any[]; 
     expectedAnswers: any[] 
   }): Promise<ReTestVerificationResponse> {
-    const res = await fetch('/api/verify-retest', {
+    const res = await this.fetchWithRetry('/api/verify-retest', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
