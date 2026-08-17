@@ -316,5 +316,117 @@ export const CROSS_SKILL_PATHWAYS: MicroPathway[] = [
         }
       }
     ]
+  },  {
+    id: 'pathway_detail_inference',
+    title: 'Pathway 4: Detail Inference & True/False/Not Given',
+    targetWeakness: 'Lỗi suy luận chi tiết & phân biệt True / False / Not Given',
+    objective: 'Xây dựng khả năng đối chiếu statement với bằng chứng trong passage, phân biệt thông tin đúng, mâu thuẫn và không được cung cấp.',
+    triggerCondition: 'Reading Detail Inference mastery thấp hoặc lặp lại lỗi False / Not Given / Unwarranted Inference',
+    triggerSubskill: 'reading_detail_inference',
+    targetSubskill: 'reading_detail_inference',
+    thresholdScore: 65,
+    description: 'Huấn luyện học viên tìm đúng evidence span, kiểm tra mức độ khẳng định và phân biệt False với Not Given thay vì suy diễn từ kiến thức bên ngoài.',
+    durationMinutes: 18,
+    estimatedMinutes: 18,
+    currentEvidenceContext: 'Ghi nhận lỗi lặp lại trong Detail Inference hoặc True / False / Not Given gần đây.',
+    steps: [
+      {
+        stepNumber: 1,
+        title: 'Bước 1: Nhận diện Evidence & trạng thái thông tin (Recognition)',
+        type: 'recognition',
+        objective: 'Xác định chính xác evidence trong passage và phân biệt True, False và Not Given.',
+        instruction: 'Đọc statement và passage, sau đó xác định evidence trực tiếp, thông tin mâu thuẫn hoặc trường hợp passage không cung cấp đủ thông tin.',
+        content: {
+          passageExcerpt: 'The research team reported that students who used adaptive learning tools completed practice tasks more efficiently. However, the study did not measure whether the tools improved students’ long-term examination performance.',
+          question: 'Statement: Adaptive learning tools improve students’ long-term examination performance. Chọn kết luận chính xác nhất.',
+          options: [
+            {
+              text: 'A. True — the passage confirms a long-term improvement in examination performance.',
+              isCorrect: false,
+              feedback: 'Sai: passage chỉ nói task efficiency và nói rõ study không đo long-term examination performance.'
+            },
+            {
+              text: 'B. False — the passage proves that adaptive tools do not improve examination performance.',
+              isCorrect: false,
+              feedback: 'Sai: passage không chứng minh điều ngược lại; nó chỉ không cung cấp bằng chứng về long-term examination performance.'
+            },
+            {
+              text: 'C. Not Given — the passage does not provide enough evidence to confirm or deny the claim.',
+              isCorrect: true,
+              feedback: 'Chính xác: passage không đo long-term examination performance, nên không thể kết luận True hoặc False.'
+            }
+          ]
+        }
+      },
+      {
+        stepNumber: 2,
+        title: 'Bước 2: Đối chiếu Evidence có hướng dẫn (Guided Transformation)',
+        type: 'transformation',
+        objective: 'Chuyển statement thành các mệnh đề kiểm chứng và đối chiếu từng phần với passage.',
+        instruction: 'Tách statement thành Subject + Claim + Degree + Time frame, sau đó đánh dấu phần nào được passage xác nhận, phủ định hoặc bỏ ngỏ.',
+        content: {
+          prompt: 'Phân tích statement: "AI tutoring significantly reduces students’ dependence on teacher feedback over the long term."',
+          transformationHint: 'Tách thành: AI tutoring / significantly reduces / dependence on teacher feedback / over the long term.',
+          sampleAnswers: [
+            'Subject: AI tutoring. Claim: reduces dependence on teacher feedback. Degree: significantly. Time frame: over the long term.',
+            'Chỉ kết luận True nếu passage cung cấp evidence tương ứng cho toàn bộ claim và mức độ khẳng định.'
+          ],
+          modelExplanation: 'Không được lấy một phần evidence đúng để suy ra toàn bộ statement đúng. Nếu claim, degree hoặc time frame không được hỗ trợ đầy đủ thì phải xem xét False hoặc Not Given.'
+        }
+      },
+      {
+        stepNumber: 3,
+        title: 'Bước 3: Vận dụng sang ngữ cảnh mới (Transfer Task)',
+        type: 'transfer',
+        objective: 'Áp dụng quy trình Evidence → Claim → Verdict vào một passage mới.',
+        instruction: 'Đọc passage mới và xác định True, False hoặc Not Given cho 2 statement. Với mỗi câu, chỉ ra evidence hoặc lý do thiếu evidence.',
+        content: {
+          topicPrompt: 'Topic: Artificial intelligence and workplace productivity',
+          task: 'Xác định verdict cho từng statement và nêu ngắn gọn evidence hỗ trợ.',
+          passage: 'A number of companies reported faster completion of routine administrative tasks after introducing AI assistants. The survey did not examine whether the same employees became more creative or more satisfied with their jobs.',
+          statements: [
+            '1. AI assistants can help employees complete some routine administrative tasks faster.',
+            '2. AI assistants make employees more creative and satisfied with their jobs.'
+          ],
+          expectedReasoning: [
+            'Statement 1: True — directly supported by faster completion of routine administrative tasks.',
+            'Statement 2: Not Given — the survey did not examine creativity or job satisfaction.'
+          ]
+        }
+      },
+      {
+        stepNumber: 4,
+        title: 'Bước 4: Kiểm chứng tiến bộ (Re-Test Verification)',
+        type: 'retest',
+        objective: 'Kiểm tra khả năng phân biệt True, False và Not Given trong ngữ cảnh hoàn toàn mới.',
+        instruction: 'Hoàn thành các câu hỏi đối chứng và chọn verdict chỉ dựa trên evidence trong passage.',
+        content: {
+          subskill: 'reading_detail_inference',
+          questions: [
+            {
+              prompt: 'Passage: "The programme increased attendance among first-year students. Researchers did not track whether attendance improved final examination scores." Statement: The programme improved first-year students’ final examination scores.',
+              options: [
+                'True',
+                'False',
+                'Not Given'
+              ],
+              correctIndex: 2,
+              explanation: 'Not Given: passage không đo hoặc xác nhận final examination scores.'
+            },
+            {
+              prompt: 'Passage: "The new library remained open until 10 p.m. on weekdays, but weekend opening hours were unchanged." Statement: The library opened later on weekends after the change.',
+              options: [
+                'True',
+                'False',
+                'Not Given'
+              ],
+              correctIndex: 1,
+              explanation: 'False: passage nói weekend opening hours were unchanged.'
+            }
+          ]
+        }
+      }
+    ]
   }
 ];
+  

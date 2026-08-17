@@ -38,11 +38,14 @@ export const DailyOptimizer: React.FC<DailyOptimizerProps> = ({ profile, onStart
 
   // Map to suggested pathway
   let recommendedPathway = CROSS_SKILL_PATHWAYS[0];
-  if (weakestSubskillId.includes('cause_effect') || weakestSubskillId.includes('coherence')) {
-    recommendedPathway = CROSS_SKILL_PATHWAYS[1];
-  } else if (weakestSubskillId.includes('grammar') || weakestSubskillId.includes('complex')) {
-    recommendedPathway = CROSS_SKILL_PATHWAYS[2];
-  }
+
+if (weakestSubskillId === 'reading_cause_effect') {
+  recommendedPathway = CROSS_SKILL_PATHWAYS[1] || CROSS_SKILL_PATHWAYS[0];
+} else if (weakestSubskillId === 'writing_complex_grammar') {
+  recommendedPathway = CROSS_SKILL_PATHWAYS[2] || CROSS_SKILL_PATHWAYS[0];
+} else if (weakestSubskillId === 'reading_detail_inference') {
+  recommendedPathway = CROSS_SKILL_PATHWAYS[3] || CROSS_SKILL_PATHWAYS[0];
+}
 
   return (
     <div className="space-y-6">

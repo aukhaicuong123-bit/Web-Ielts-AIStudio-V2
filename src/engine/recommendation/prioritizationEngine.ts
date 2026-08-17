@@ -76,27 +76,118 @@ export class PrioritizationEngine {
         skill: 'reading' as const
       };
 
-      // Factor 1: Mastery Deficit relative to Target Band (0 to 40 pts)
-      const masteryDeficitScore = Math.max(0, (targetMasteryThreshold - mastery) * 0.5);
+            // Factor 1: Mastery Deficit relative to Target Band (0 to 40 pts)
+      const masteryDeficitScore = Math.min(
+        40,
+        Math.max(0, targetMasteryThreshold - mastery)
+      );
 
-      // Factor 2: Recurring Error Count (0 to 30 pts)
-      const matchedError = profile.activeErrors.find((e) => e.subskill === subskillId);
-      const errorCount = matchedError ? matchedError.count : 0;
-      const errorSeverity = matchedError?.severity === 'high' ? 1.5 : matchedError?.severity === 'medium' ? 1.2 : 1.0;
-      const errorScore = Math.min(30, errorCount * 10 * errorSeverity);
+      // Factor 2: Aggregated Error Evidence (0 to 30 pts)
+      const matchedErrors = profile.activeErrors.filter(
+        (e) => e.subskill === subskillId
+      );
+
+      const matchedPatterns = (profile.errorPatterns || []).filter(
+        (p) => p.subskill === subskillId && !p.resolved
+      );
+
+      const errorCount = matchedErrors.reduce(
+        (sum, error) => sum + Math.max(0, error.count || 0),
+        0
+      );
+
+      const matchedError = matchedErrors.reduce<NonNullable<typeof matchedErrors[number]> | undefined>(
+        (best, current) => {
+          if (!best) return current;
+
+          const severityRank: Record<'low' | 'medium' | 'high', number> = {
+            low: 1,
+            medium: 2,
+            high: 3
+          };
+
+          const bestRank = severityRank[best.severity];
+          const currentRank = severityRank[current.severity];
+
+          if (currentRank > bestRank) return current;
+          if (currentRank < bestRank) return best;
+
+          return current.count > best.count ? current : best;
+        },
+        undefined
+      );
+
+      const matchedPattern = matchedPatterns.reduce<
+        NonNullable<typeof matchedPatterns[number]> | undefined
+      >(
+        (best, current) => {
+          if (!best) return current;
+          return current.frequency > best.frequency ? current : best;
+        },
+        undefined
+      );
+
+      const errorSeverity =
+        matchedError?.severity === 'high'
+          ? 1.5
+          : matchedError?.severity === 'medium'
+            ? 1.2
+            : 1.0;
+
+      const recurrenceScore = Math.min(
+        24,
+        errorCount * 6 * errorSeverity
+      );
+
+      const patternEvidenceScore = matchedPattern
+        ? Math.min(3, matchedPattern.frequency) * 1.5
+        : 0;
+
+      const trendScore =
+        matchedPattern?.trend === 'worsening'
+          ? 6
+          : matchedPattern?.trend === 'persistent'
+            ? 3
+            : matchedPattern?.trend === 'new'
+              ? 2
+              : 0;
+
+      const errorScore = Math.min(
+        30,
+        recurrenceScore + patternEvidenceScore + trendScore
+      );
 
       // Factor 3: Subskill High-Impact Weight (0 to 15 pts)
-      const isHighImpact = ['reading_paraphrase', 'writing_coherence_cohesion', 'writing_complex_grammar'].includes(subskillId);
+      const isHighImpact = [
+        'reading_paraphrase',
+        'writing_coherence_cohesion',
+        'writing_complex_grammar'
+      ].includes(subskillId);
+
       const impactScore = isHighImpact ? 15 : 8;
 
-      // Factor 4: Unresolved Re-test History (0 to 15 pts)
-      const previousRetest = profile.reTestHistory.find((r) => r.subskill === subskillId);
-      const needsRetestScore = previousRetest && previousRetest.status === 'needs_practice' ? 15 : 0;
+      // Factor 4: Re-test Evidence (0 to 15 pts)
+      const previousRetest = profile.reTestHistory.find(
+        (r) => r.subskill === subskillId
+      );
+
+      const needsRetestScore =
+        previousRetest?.status === 'needs_practice'
+          ? 15
+          : previousRetest?.status === 'partial_progress'
+            ? 8
+            : 0;
 
       // Factor 5: Exam Urgency bonus (0 to 10 pts)
       const examBonus = isUrgentExam ? 10 : 0;
 
-      const totalScore = Math.round(masteryDeficitScore + errorScore + impactScore + needsRetestScore + examBonus);
+      const totalScore = Math.round(
+        masteryDeficitScore +
+        errorScore +
+        impactScore +
+        needsRetestScore +
+        examBonus
+      );
 
       return {
         subskillId,
@@ -104,6 +195,7 @@ export class PrioritizationEngine {
         mastery,
         errorCount,
         matchedError,
+        matchedPattern,
         isHighImpact,
         previousRetest,
         totalScore
@@ -125,11 +217,14 @@ export class PrioritizationEngine {
 
     // 2. Match to corresponding Micro-Pathway
     let matchedPathway: MicroPathway = CROSS_SKILL_PATHWAYS[0];
-    if (topCandidate.subskillId.includes('cause_effect') || topCandidate.subskillId.includes('coherence') || topCandidate.subskillId.includes('argument')) {
-      matchedPathway = CROSS_SKILL_PATHWAYS[1] || CROSS_SKILL_PATHWAYS[0];
-    } else if (topCandidate.subskillId.includes('grammar') || topCandidate.subskillId.includes('complex')) {
-      matchedPathway = CROSS_SKILL_PATHWAYS[2] || CROSS_SKILL_PATHWAYS[0];
-    }
+
+if (topCandidate.subskillId === 'reading_cause_effect') {
+  matchedPathway = CROSS_SKILL_PATHWAYS[1] || CROSS_SKILL_PATHWAYS[0];
+} else if (topCandidate.subskillId === 'writing_complex_grammar') {
+  matchedPathway = CROSS_SKILL_PATHWAYS[2] || CROSS_SKILL_PATHWAYS[0];
+} else if (topCandidate.subskillId === 'reading_detail_inference') {
+  matchedPathway = CROSS_SKILL_PATHWAYS[3] || CROSS_SKILL_PATHWAYS[0];
+}
 
     // 3. Build Explainability Reasoning Bullets
     const reasons: string[] = [];
