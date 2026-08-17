@@ -2,7 +2,7 @@ import { ReTestResult, SubskillId, LearnerProfile } from '../../types';
 import { SUBSKILLS_DICTIONARY } from '../../data/mockContent';
 import { MasteryModel } from '../mastery/masteryModel';
 import { ErrorMemory } from '../errors/errorMemory';
-
+import { ErrorRepository } from '../errors/errorRepository';
 export interface RetestEvaluationInput {
   pathwayId: string;
   subskill: SubskillId;
@@ -101,25 +101,26 @@ export class RetestVerificationEngine {
     }
 
     updatedSubskillMastery[retestResult.subskill] = Math.min(100, Math.max(0, newScore));
-
+const subskillName = 
+SUBSKILLS_DICTIONARY[retestResult.subskill]?.name ||
+ retestResult.subskill;
     // 2. Update Active Errors
-    let updatedActiveErrors = [...profile.activeErrors];
-    if (retestResult.status === 'verified_progress') {
-      // Remove or resolve active error
-      updatedActiveErrors = updatedActiveErrors.filter((e) => e.subskill !== retestResult.subskill);
-    } else if (retestResult.status === 'partial_progress') {
-      // Reduce error count by 1 if greater than 1
-      updatedActiveErrors = updatedActiveErrors.map((e) => {
-        if (e.subskill === retestResult.subskill) {
-          return {
-            ...e,
-            count: Math.max(1, e.count - 1),
-            lastEncountered: 'Đang cải thiện'
-          };
-        }
-        return e;
-      });
-    }
+let updatedActiveErrors = [...profile.activeErrors];
+
+if (retestResult.status === 'verified_progress') {
+  updatedActiveErrors = ErrorRepository.resolveSubskill(
+    updatedActiveErrors,
+    retestResult.subskill
+  );
+} else if (retestResult.status === 'partial_progress') {
+  updatedActiveErrors = ErrorRepository.reduceSubskillOccurrences(
+    updatedActiveErrors,
+    retestResult.subskill,
+    1,
+    `Đã kiểm chứng Re-test: ${subskillName}`
+  );
+}
+
 
     // 3. Update Error Memory if patterns exist
     let updatedErrorPatterns = profile.errorPatterns ? [...profile.errorPatterns] : [];
@@ -142,7 +143,6 @@ export class RetestVerificationEngine {
     const updatedReTestHistory = [retestResult, ...profile.reTestHistory];
 
     // 5. Add to Recent Activity
-    const subskillName = SUBSKILLS_DICTIONARY[retestResult.subskill]?.name || retestResult.subskill;
     const updatedActivity = [
       {
         id: `act_${Date.now()}`,

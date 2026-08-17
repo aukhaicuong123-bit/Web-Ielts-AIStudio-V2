@@ -155,7 +155,26 @@ export class ErrorRepository {
   ): ErrorTag[] {
     return errors.filter((error) => error.subskill !== subskill);
   }
+static reduceSubskillOccurrences(
+  errors: ErrorTag[],
+  subskill: SubskillId,
+  amount = 1,
+  lastEncountered = 'Vừa xong'
+): ErrorTag[] {
+  const decrement = Math.max(1, Math.round(amount));
 
+  return errors.map((error) => {
+    if (error.subskill !== subskill) {
+      return error;
+    }
+
+    return {
+      ...error,
+      count: Math.max(1, error.count - decrement),
+      lastEncountered,
+    };
+  });
+}
   static getBySubskill(
     errors: ErrorTag[],
     subskill: SubskillId
