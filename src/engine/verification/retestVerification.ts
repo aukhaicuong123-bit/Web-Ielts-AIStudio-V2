@@ -61,6 +61,7 @@ export class RetestVerificationEngine {
       id: `retest_${Date.now()}`,
       pathwayId: input.pathwayId,
       subskill: input.subskill,
+      errorPatternName: input.errorPatternName,
       timestamp: new Date().toLocaleDateString('vi-VN'),
       scoreBefore: input.scoreBefore,
       scoreAfter,
@@ -125,7 +126,11 @@ if (retestResult.status === 'verified_progress') {
     // 3. Update Error Memory if patterns exist
     let updatedErrorPatterns = profile.errorPatterns ? [...profile.errorPatterns] : [];
     if (retestResult.status === 'verified_progress') {
-      updatedErrorPatterns = ErrorMemory.markAsResolved(updatedErrorPatterns, retestResult.subskill);
+      updatedErrorPatterns = ErrorMemory.markAsResolved(
+  updatedErrorPatterns,
+  retestResult.subskill,
+  retestResult.errorPatternName
+);
     } else if (retestResult.status === 'partial_progress') {
       updatedErrorPatterns = updatedErrorPatterns.map((p) => {
         if (p.subskill === retestResult.subskill) {

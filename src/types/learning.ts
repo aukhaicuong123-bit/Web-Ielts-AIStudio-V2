@@ -182,6 +182,7 @@ export interface ReTestResult {
   id: string;
   pathwayId: string;
   subskill: SubskillId;
+  errorPatternName?: string;
   timestamp: string;
   scoreBefore: number;
   scoreAfter: number;
