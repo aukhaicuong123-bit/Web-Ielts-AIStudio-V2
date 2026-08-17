@@ -24,6 +24,8 @@ import { READING_PASSAGES, SUBSKILLS_DICTIONARY } from '../data/mockContent';
 import { ReadingPassage, LearnerProfile, SubskillId, ReadingQuestion } from '../types';
 import { profileStorage } from '../services/api';
 import { LearningEngine } from '../engine';
+import { ErrorRepository } from '../engine/errors/errorRepository';
+
 
 interface ReadingModuleProps {
   profile: LearnerProfile;
@@ -121,32 +123,34 @@ export const ReadingModule: React.FC<ReadingModuleProps> = ({
 
     // 3. Update Error Memory if wrong
     let updatedErrors = [...profile.activeErrors];
-    if (!isCorrect) {
-      const distractor = question.distractorDetails?.[chosenAnswer];
-      const errorTagCode = distractor?.errorTagCode || `ERR_${subskillId.toUpperCase()}`;
-      const errorTagName = distractor?.errorTagName || SUBSKILLS_DICTIONARY[subskillId]?.targetWeakness || 'Lỗi đọc hiểu bẫy học thuật';
 
-      // Check if existing
-      const existingIdx = updatedErrors.findIndex((e) => e.subskill === subskillId && e.code === errorTagCode);
-      if (existingIdx >= 0) {
-        updatedErrors[existingIdx] = {
-          ...updatedErrors[existingIdx],
-          count: updatedErrors[existingIdx].count + 1,
-          lastEncountered: 'Vừa xong (Reading Practice)'
-        };
-      } else {
-        updatedErrors.push({
-          id: `err_${Date.now()}_${question.id}`,
-          code: errorTagCode,
-          category: 'Reading Comprehension',
-          name: errorTagName,
-          subskill: subskillId,
-          severity: 'medium',
-          count: 1,
-          lastEncountered: 'Vừa xong (Reading Practice)'
-        });
-      }
-    }
+if (!isCorrect) {
+  const distractor = question.distractorDetails?.[chosenAnswer];
+
+  const errorTagCode =
+    distractor?.errorTagCode ||
+    `ERR_${subskillId.toUpperCase()}`;
+
+  const errorTagName =
+    distractor?.errorTagName ||
+    SUBSKILLS_DICTIONARY[subskillId]?.targetWeakness ||
+    'Lỗi đọc hiểu';
+
+  updatedErrors = ErrorRepository.recordOccurrence(
+    updatedErrors,
+    {
+      id: `reading_${question.id}`,
+      code: errorTagCode,
+      category: 'Reading Comprehension',
+      name: errorTagName,
+      subskill: subskillId,
+      severity: 'medium',
+      count: 1,
+    },
+    1,
+    'Vừa xong (Reading Practice)'
+  );
+}
 
     // 4. Recompute estimated band via LearningEngine
     const recalculatedBand = LearningEngine.mastery.computeEstimatedBand(updatedSubskills);
