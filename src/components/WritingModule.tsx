@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ErrorRepository } from '../engine/errors/errorRepository';
 import { 
   PenTool, 
   Sparkles, 
@@ -204,33 +205,11 @@ export const WritingModule: React.FC<WritingModuleProps> = ({
 
       // --- LearningEngine Updates ---
       // 1. Record Error Patterns in ErrorMemory
-      let updatedErrors = [...profile.activeErrors];
-      if (result.errorTags && result.errorTags.length > 0) {
-        result.errorTags.forEach((tag) => {
-          const idx = updatedErrors.findIndex(
-            (e) => e.code === tag.code || (e.subskill === tag.subskill && e.name === tag.name)
-          );
-          if (idx >= 0) {
-            updatedErrors[idx] = {
-              ...updatedErrors[idx],
-              count: updatedErrors[idx].count + 1,
-              lastEncountered: 'Vừa xong (Writing Lab)'
-            };
-          } else {
-            updatedErrors.push({
-              id: tag.id || `err_write_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-              code: tag.code || `ERR_${tag.subskill.toUpperCase()}`,
-              category: tag.category,
-              name: tag.name,
-              subskill: tag.subskill as SubskillId,
-              severity: tag.severity || 'medium',
-              count: 1,
-              lastEncountered: 'Vừa xong (Writing Lab)'
-            });
-          }
-        });
-      }
-
+      const updatedErrors = ErrorRepository.mergeDetectedErrors(
+  profile.activeErrors,
+  result.errorTags || [],
+  'Vừa xong (Writing Lab)'
+);
       // 2. Compute updated mastery via LearningEngine
       const updatedSubskills = { ...profile.subskillMastery };
       if (result.rubricScores) {
