@@ -13,6 +13,7 @@ import {
   DiagnosticReadingQuestion
 } from '../data/diagnosticContent';
 import { LearningEngine } from '../engine';
+import { ErrorRepository } from '../engine/errors/errorRepository';
 import { AIService } from '../services/ai/aiService';
 import { profileStorage } from '../services/api';
 import { DiagnosticResultsView, DiagnosticResultData } from './DiagnosticResultsView';
@@ -223,10 +224,11 @@ export const DiagnosticFlow: React.FC<DiagnosticFlowProps> = ({
         isDemoProfile: false,
         subskillMastery: subskillCalculations,
         baselineMastery: subskillCalculations,
-        activeErrors: [
-          ...detectedErrors,
-          ...profile.activeErrors.filter(e => !detectedErrors.some(d => d.code === e.code))
-        ],
+        activeErrors: ErrorRepository.mergeDetectedErrors(
+  profile.activeErrors,
+  detectedErrors,
+  'Vừa xong (Diagnostic)'
+),
         recentActivity: [
           {
             id: `diag_${Date.now()}`,
