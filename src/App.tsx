@@ -25,6 +25,9 @@ export default function App() {
     return p.onboardingCompleted ? '/today' : '/onboarding';
   });
   const [activePathwayId, setActivePathwayId] = useState<string>('pathway_paraphrase');
+  const [activeSessionMinutes, setActiveSessionMinutes] = useState<number>(
+  profile.preferredSessionMinutes || profile.dailyAvailableMinutes || 20
+);
 
   useEffect(() => {
     // Sync profile on mount
@@ -40,10 +43,14 @@ export default function App() {
     ProfileService.saveProfile(updatedProfile);
   };
 
-  const handleStartPathway = (pathwayId: string) => {
-    setActivePathwayId(pathwayId);
-    setCurrentRoute('/intervention');
-  };
+  const handleStartPathway = (
+  pathwayId: string,
+  sessionMinutes = profile.preferredSessionMinutes || profile.dailyAvailableMinutes || 20
+) => {
+  setActivePathwayId(pathwayId);
+  setActiveSessionMinutes(sessionMinutes);
+  setCurrentRoute('/intervention');
+};
 
   const handleNavigate = (route: AppRoute) => {
     setCurrentRoute(route);
