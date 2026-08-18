@@ -215,16 +215,22 @@ export class PrioritizationEngine {
       totalScore: 75
     };
 
-    // 2. Match to corresponding Micro-Pathway
-    let matchedPathway: MicroPathway = CROSS_SKILL_PATHWAYS[0];
+    // 2. Match the highest-priority subskill to its supported Micro-Pathway
+    const PATHWAY_BY_SUBSKILL: Partial<Record<SubskillId, string>> = {
+      reading_paraphrase: 'pathway_paraphrase',
+      writing_lexical_resource: 'pathway_paraphrase',
+      reading_cause_effect: 'pathway_cause_effect',
+      writing_coherence_cohesion: 'pathway_cause_effect',
+      writing_complex_grammar: 'pathway_complex_grammar',
+      reading_detail_inference: 'pathway_detail_inference',
+      cross_paraphrase_transfer: 'pathway_paraphrase',
+      cross_argument_logic: 'pathway_cause_effect',
+    };
 
-if (topCandidate.subskillId === 'reading_cause_effect') {
-  matchedPathway = CROSS_SKILL_PATHWAYS[1] || CROSS_SKILL_PATHWAYS[0];
-} else if (topCandidate.subskillId === 'writing_complex_grammar') {
-  matchedPathway = CROSS_SKILL_PATHWAYS[2] || CROSS_SKILL_PATHWAYS[0];
-} else if (topCandidate.subskillId === 'reading_detail_inference') {
-  matchedPathway = CROSS_SKILL_PATHWAYS[3] || CROSS_SKILL_PATHWAYS[0];
-}
+    const matchedPathwayId = PATHWAY_BY_SUBSKILL[topCandidate.subskillId];
+    const matchedPathway = matchedPathwayId
+      ? CROSS_SKILL_PATHWAYS.find((pathway) => pathway.id === matchedPathwayId)
+      : undefined;
 
     // 3. Build Explainability Reasoning Bullets
     const reasons: string[] = [];
@@ -245,20 +251,29 @@ if (topCandidate.subskillId === 'reading_cause_effect') {
     if (examDaysRemaining !== null && examDaysRemaining <= 45) {
       reasons.push(`Kỳ thi dự kiến trong ${examDaysRemaining} ngày tới — Ưu tiên can thiệp dứt điểm các lỗi mất điểm nghiêm trọng`);
     }
+    const actionType = matchedPathway
+      ? 'intervention'
+      : topCandidate.info?.skill === 'writing'
+        ? 'practice_writing'
+        : 'practice_reading';
 
     return {
-      id: `action_${matchedPathway.id}`,
-      type: 'intervention',
-      title: matchedPathway.title,
+      id: matchedPathway
+        ? `action_${matchedPathway.id}`
+        : `action_practice_${topCandidate.subskillId}`,
+      type: actionType,
+      title: matchedPathway?.title || `Practice: ${topCandidate.info?.name || topCandidate.subskillId}`,
       targetSubskill: topCandidate.subskillId,
       targetSubskillName: topCandidate.info?.name || topCandidate.subskillId,
-      targetPathwayId: matchedPathway.id,
+      targetPathwayId: matchedPathway?.id,
       estimatedMinutes: availableMinutes,
       priorityScore: Math.min(100, topCandidate.totalScore),
       urgency: topCandidate.totalScore >= 70 || isUrgentExam ? 'high' : 'medium',
       reasons,
       evidenceContext: topCandidate.matchedError?.name || topCandidate.info?.targetWeakness,
-      expectedOutcome: `Tăng từ +15% đến +25% độ chính xác cho ${topCandidate.info?.name || 'kỹ năng'} và xác minh ngay qua Re-test đối chứng.`
+      expectedOutcome: matchedPathway
+        ? `Target improvement for ${topCandidate.info?.name || 'the skill'} will be verified through Re-test evidence.`
+        : `Focused practice for ${topCandidate.info?.name || topCandidate.subskillId} within the ${availableMinutes}-minute session.`
     };
   }
 }
