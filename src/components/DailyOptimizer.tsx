@@ -53,13 +53,13 @@ if (weakestSubskillId === 'reading_cause_effect') {
       <div className="bg-[#0F172A] rounded-2xl p-6 sm:p-8 text-white shadow-sm border border-slate-800 relative overflow-hidden">
         <div className="relative z-10 max-w-4xl space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold uppercase tracking-wider">
-            <Zap className="w-3.5 h-3.5" /> 30 Phút Tối Ưu Hôm Nay
+            <Zap className="w-3.5 h-3.5" /> {profile.preferredSessionMinutes} Phút Tối Ưu Hôm Nay
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
             Bạn không cần cày nhiều bài hơn. Hãy sửa đúng 1 nút thắt hôm nay.
           </h1>
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
-            Dựa trên <strong className="text-white">{profile.activeErrors.length} lỗi học tập gần nhất</strong>, hệ thống đã khoanh vùng được điểm nghẽn có tỷ lệ mất điểm cao nhất của bạn. Hoàn thành 1 chu kỳ can thiệp ngắn 20 phút rồi kiểm chứng ngay qua Re-test.
+            Dựa trên <strong className="text-white">{profile.activeErrors.length} lỗi học tập gần nhất</strong>, hệ thống đã khoanh vùng được điểm nghẽn có tỷ lệ mất điểm cao nhất của bạn. Hoàn thành 1 chu kỳ can thiệp ngắn {profile.preferredSessionMinutes} phút rồi kiểm chứng ngay qua Re-test.
           </p>
 
           {/* Action Callout Box */}
