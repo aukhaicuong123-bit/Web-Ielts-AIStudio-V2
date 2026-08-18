@@ -152,15 +152,16 @@ export const TodayView: React.FC<TodayViewProps> = ({
               action={nextAction}
               onStart={handleStartSession}
               ctaText={`Bắt đầu phiên học ngay (${nextAction.estimatedMinutes} phút)`}
-              ctaSubtext="Sau khi hoàn thành bài tập, bạn sẽ làm bài Re-Test đối chứng 5 phút để xác nhận tiến bộ."
+              ctaSubtext="Sau khi hoàn thành bài tập, hệ thống sẽ đối chứng kết quả để xác nhận tiến bộ."
             />
           </div>
 
           {/* 3. Micro-Session Step Breakdown */}
           {matchedPathway && (
             <MicroSessionBreakdown
-              pathway={matchedPathway}
-            />
+  pathway={matchedPathway}
+  sessionMinutes={selectedMinutes}
+/>
           )}
 
           {/* 4. Why this was selected: Deep Explainability Accordion */}

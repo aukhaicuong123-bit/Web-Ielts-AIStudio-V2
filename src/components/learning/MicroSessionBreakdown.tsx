@@ -13,13 +13,16 @@ import {
 
 export interface MicroSessionBreakdownProps {
   pathway: MicroPathway;
+  sessionMinutes?: number;
   className?: string;
 }
 
 export const MicroSessionBreakdown: React.FC<MicroSessionBreakdownProps> = ({
   pathway,
+  sessionMinutes,
   className = ''
 }) => {
+  const effectiveMinutes = sessionMinutes ?? pathway.durationMinutes;
   const getStepTypeBadge = (type: PathwayStep['type']) => {
     switch (type) {
       case 'reading_drill':
@@ -27,35 +30,30 @@ export const MicroSessionBreakdown: React.FC<MicroSessionBreakdownProps> = ({
           label: 'Nhận diện & Bóc tách',
           icon: <BookOpen className="w-3 h-3 text-indigo-600" />,
           color: 'bg-indigo-50 text-indigo-700 border-indigo-200/80',
-          est: '~5 phút'
         };
       case 'vocab_transform':
         return {
           label: 'Chuyển hóa cấu trúc / từ vựng',
           icon: <Layers className="w-3 h-3 text-purple-600" />,
           color: 'bg-purple-50 text-purple-700 border-purple-200/80',
-          est: '~5 phút'
         };
       case 'writing_application':
         return {
           label: 'Ứng dụng vào Writing thực tế',
           icon: <PenTool className="w-3 h-3 text-emerald-600" />,
           color: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
-          est: '~5 phút'
         };
       case 'retest':
         return {
           label: 'Xác minh qua Re-Test đối chứng',
           icon: <CheckCircle2 className="w-3 h-3 text-amber-600" />,
           color: 'bg-amber-50 text-amber-700 border-amber-200/80',
-          est: '~5 phút'
         };
       default:
         return {
           label: 'Luyện tập',
           icon: <Clock className="w-3 h-3 text-slate-600" />,
           color: 'bg-slate-50 text-slate-700 border-slate-200',
-          est: '~5 phút'
         };
     }
   };
@@ -72,13 +70,21 @@ export const MicroSessionBreakdown: React.FC<MicroSessionBreakdownProps> = ({
           </p>
         </div>
         <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md">
-          Tổng: {pathway.durationMinutes} phút
+         Tổng: {effectiveMinutes} phút
         </span>
       </div>
 
       <div className="space-y-2.5">
         {pathway.steps.map((step, idx) => {
           const typeBadge = getStepTypeBadge(step.type);
+          const baseStepMinutes = Math.floor(
+  effectiveMinutes / pathway.steps.length
+);
+const remainderMinutes =
+  effectiveMinutes % pathway.steps.length;
+
+const stepMinutes =
+  baseStepMinutes + (idx < remainderMinutes ? 1 : 0);
 
           return (
             <div
@@ -112,7 +118,7 @@ export const MicroSessionBreakdown: React.FC<MicroSessionBreakdownProps> = ({
               {/* Time pill */}
               <div className="flex items-center gap-1 text-[11px] font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-200/80 sm:flex-shrink-0 self-start">
                 <Clock className="w-3 h-3 text-slate-400" />
-                <span>{typeBadge.est}</span>
+                <span>{stepMinutes} phút</span>
               </div>
             </div>
           );

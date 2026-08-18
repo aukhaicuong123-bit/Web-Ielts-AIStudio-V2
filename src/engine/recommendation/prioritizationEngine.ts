@@ -238,8 +238,7 @@ if (topCandidate.subskillId === 'reading_cause_effect') {
     if (topCandidate.mastery < targetMasteryThreshold) {
       reasons.push(`Độ thuần thục hiện tại (${topCandidate.mastery}%) dưới ngưỡng an toàn Band ${profile.targetBand.toFixed(1)} (yêu cầu ${targetMasteryThreshold}%)`);
     }
-    reasons.push(`Thời lượng can thiệp (${matchedPathway.durationMinutes} phút) được điều chỉnh theo cài đặt ${availableMinutes} phút của bạn`);
-
+    reasons.push(`Phiên học được phân bổ theo ngân sách ${availableMinutes} phút bạn đã chọn, bao gồm cả bước Re-Test đối chứng`);
     if (topCandidate.previousRetest && topCandidate.previousRetest.status === 'needs_practice') {
       reasons.push('Biên bản Re-test gần nhất cho thấy cần thêm 1 vòng luyện tập để củng cố phản xạ');
     }
@@ -254,7 +253,7 @@ if (topCandidate.subskillId === 'reading_cause_effect') {
       targetSubskill: topCandidate.subskillId,
       targetSubskillName: topCandidate.info?.name || topCandidate.subskillId,
       targetPathwayId: matchedPathway.id,
-      estimatedMinutes: Math.min(availableMinutes, matchedPathway.durationMinutes),
+      estimatedMinutes: availableMinutes,
       priorityScore: Math.min(100, topCandidate.totalScore),
       urgency: topCandidate.totalScore >= 70 || isUrgentExam ? 'high' : 'medium',
       reasons,
