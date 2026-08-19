@@ -365,10 +365,12 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
               <button
                 key={sIdx}
                 onClick={() => {
-                  if (
+                  const canEnterStep =
                     allowedStepIndexes.has(sIdx) &&
-                    (sIdx <= currentStepIdx || isCompleted)
-                  ) {
+                    (sIdx <= currentStepIdx || isCompleted) &&
+                    (sIdx !== 3 || step3Evaluation);
+
+                  if (canEnterStep) {
                     setCurrentStepIdx(sIdx);
                   }
                 }}
@@ -843,10 +845,16 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
                 Quay lại Bước 2
               </button>
               <button
-                onClick={() => sessionPlan.includesRetest ? setCurrentStepIdx(3) : onBackToOptimizer}
+                onClick={() => {
+                  if (sessionPlan.includesRetest && step3Evaluation) {
+                    setCurrentStepIdx(3);
+                  } else if (!sessionPlan.includesRetest) {
+                    onBackToOptimizer();
+                  }
+                }}
                 className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-xs transition"
               >
-                <span>{sessionPlan.includesRetest ? 'Sang Bước 4: Re-Test Kiểm Chứng Tiến Bộ' : 'Kết thúc phiên nhanh'}</span>
+                <span>{sessionPlan.includesRetest ? (step3Evaluation ? 'Sang Bước 4: Re-Test Kiểm Chứng Tiến Bộ' : 'Hoàn tất thẩm định Bước 3 để mở Re-Test') : 'Kết thúc phiên nhanh'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
