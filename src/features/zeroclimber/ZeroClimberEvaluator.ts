@@ -47,6 +47,30 @@ export function evaluateLesson1ProductionLocally(
     /my name\s+([a-zA-Z]+)/i.test(lower) &&
     !/my name (is|'s)\s+/i.test(lower);
 
+  const missingArticleMatch =
+    /\bi (am|'m)\s+(student|pupil|teacher|engineer|doctor|worker|developer|designer|nurse|freelancer|officer)\b/i.test(
+      lower
+    );
+
+  if (missingArticleMatch) {
+    return {
+      isDeterminedLocally: true,
+      isCorrect: false,
+      scorePercent: 55,
+      feedback:
+        'Bạn đang thiếu mạo từ "a/an" trước danh từ nghề nghiệp hoặc vai trò.',
+      correctedSentence: formatBeginnerSentences(
+        trimmed.replace(
+          /\bi (am|'m)\s+(student|pupil|teacher|engineer|doctor|worker|developer|designer|nurse|freelancer|officer)\b/gi,
+          'I am a $2'
+        )
+      ),
+      explanation:
+        'Với danh từ đếm được số ít như student, teacher hoặc engineer, cần dùng "a/an": I am a student.',
+      source: 'local_deterministic',
+    };
+  }
+
   if (missingIsMatch) {
     const nameMatch = lower.match(/my name\s+([a-zA-Z]+)/i);
     const rawName = nameMatch ? nameMatch[1] : 'Nam';
@@ -106,11 +130,10 @@ export function evaluateLesson1ProductionLocally(
   }
 
   const hasName =
-    /my name (is|'s)\s+([a-zA-Z\s]+)/i.test(lower) ||
-    /\bi (am|'m)\s+([a-zA-Z\s]+)/i.test(lower);
+    /(?:^|[.!?]\s*)my name (?:is|'s)\s+[a-zA-Z]+/i.test(lower);
 
   const hasRoleOrAge =
-    /\bi (am|'m)\s+(a|an)?\s*(student|pupil|teacher|engineer|doctor|worker|developer|designer|nurse|freelancer|officer)/i.test(
+    /\bi (am|'m)\s+(a|an)\s+(student|pupil|teacher|engineer|doctor|worker|developer|designer|nurse|freelancer|officer)/i.test(
       lower
     ) ||
     /\bi (am|'m)\s+\d+\s*(years\s*old)?/i.test(lower) ||
@@ -126,7 +149,7 @@ export function evaluateLesson1ProductionLocally(
     (hasRoleOrAge ? 1 : 0) +
     (hasOriginOrLocation ? 1 : 0);
 
-  if (validComponentCount >= 2) {
+  if (validComponentCount === 3) {
     let cleanText = formatBeginnerSentences(trimmed);
 
     if (
