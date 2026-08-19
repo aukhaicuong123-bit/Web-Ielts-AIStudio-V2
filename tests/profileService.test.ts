@@ -51,3 +51,29 @@ test('saveProfile preserves an explicitly updated currentEstimatedBand across re
     'currentEstimatedBand must survive save/reload instead of being reset to aiEvidenceEstimate'
   );
 });
+
+
+test('fresh storage returns an unassessed learner instead of the demo profile', () => {
+  globalThis.localStorage.clear();
+
+  const profile = ProfileService.getProfile();
+
+  assert.equal(profile.isDemoProfile, false);
+  assert.equal(profile.onboardingCompleted, false);
+  assert.equal(profile.hasCompletedDiagnostic, false);
+  assert.equal(profile.currentLevelType, 'not_assessed');
+  assert.equal(profile.currentEstimatedBand, 0);
+});
+
+test('invalid stored profile falls back to an unassessed learner', () => {
+  globalThis.localStorage.clear();
+  globalThis.localStorage.setItem('ai_ielts_learner_profile_v2', '{invalid-json');
+
+  const profile = ProfileService.getProfile();
+
+  assert.equal(profile.isDemoProfile, false);
+  assert.equal(profile.onboardingCompleted, false);
+  assert.equal(profile.hasCompletedDiagnostic, false);
+  assert.equal(profile.currentLevelType, 'not_assessed');
+  assert.equal(profile.currentEstimatedBand, 0);
+});

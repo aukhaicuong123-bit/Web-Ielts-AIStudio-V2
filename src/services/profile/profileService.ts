@@ -201,7 +201,7 @@ export class ProfileService {
     } catch (e) {
       console.warn('Could not read profile from localStorage:', e);
     }
-    return DEMO_LEARNER_PROFILE;
+    return createUnassessedProfile();
   }
 
   static saveProfile(profile: LearnerProfile): void {
