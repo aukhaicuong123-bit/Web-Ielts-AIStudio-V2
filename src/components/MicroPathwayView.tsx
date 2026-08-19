@@ -25,6 +25,7 @@ import { CROSS_SKILL_PATHWAYS } from '../data/pathways';
 import { SUBSKILLS_DICTIONARY } from '../data/mockContent';
 import { apiService, profileStorage } from '../services/api';
 import { LearningEngine } from '../engine';
+import { buildSessionPlan } from '../engine/session/sessionPlanner';
 
 interface MicroPathwayViewProps {
   pathwayId: string;
@@ -70,6 +71,8 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
   const [hasResumedSession, setHasResumedSession] = useState<boolean>(false);
 
   const pathway = CROSS_SKILL_PATHWAYS.find((p) => p.id === activePathwayId) || CROSS_SKILL_PATHWAYS[0];
+  const sessionPlan = buildSessionPlan(pathway.steps, sessionMinutes);
+  const allowedStepIndexes = new Set(sessionPlan.stepIndexes);
   const currentStep = pathway.steps[currentStepIdx] || pathway.steps[0];
   const subskillInfo = SUBSKILLS_DICTIONARY[pathway.triggerSubskill];
   const subskillName = subskillInfo?.name || pathway.triggerSubskill;
@@ -77,6 +80,13 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
   // Find active error frequency if any
   const matchedActiveError = profile.activeErrors.find((e) => e.subskill === pathway.triggerSubskill);
   const currentMasteryBefore = profile.subskillMastery[pathway.triggerSubskill] || 50;
+
+  useEffect(() => {
+    const maxAllowedStep = sessionPlan.stepIndexes[sessionPlan.stepIndexes.length - 1] ?? 0;
+    if (currentStepIdx > maxAllowedStep) {
+      setCurrentStepIdx(maxAllowedStep);
+    }
+  }, [currentStepIdx, sessionMinutes, pathway.id]);
 
   // Load saved session on mount or pathway switch
   useEffect(() => {
@@ -355,7 +365,12 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
               <button
                 key={sIdx}
                 onClick={() => {
-                  if (sIdx <= currentStepIdx || isCompleted) setCurrentStepIdx(sIdx);
+                  if (
+                    allowedStepIndexes.has(sIdx) &&
+                    (sIdx <= currentStepIdx || isCompleted)
+                  ) {
+                    setCurrentStepIdx(sIdx);
+                  }
                 }}
                 className={`p-3 rounded-lg border text-left transition flex flex-col justify-between ${
                   isCurrent
@@ -828,10 +843,10 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
                 Quay lại Bước 2
               </button>
               <button
-                onClick={() => setCurrentStepIdx(3)}
+                onClick={() => sessionPlan.includesRetest ? setCurrentStepIdx(3) : onBackToOptimizer}
                 className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-xs transition"
               >
-                <span>Sang Bước 4: Re-Test Kiểm Chứng Tiến Bộ</span>
+                <span>{sessionPlan.includesRetest ? 'Sang Bước 4: Re-Test Kiểm Chứng Tiến Bộ' : 'Kết thúc phiên nhanh'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
