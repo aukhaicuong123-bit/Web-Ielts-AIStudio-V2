@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Zap, BookOpen, TrendingUp, User, X } from 'lucide-react';
+import { LayoutDashboard, Zap, BookOpen, TrendingUp, User, X, Mountain } from 'lucide-react';
 import { AppRoute } from '../../types/routes';
 import { PRIMARY_NAV_ITEMS } from '../navigation/routes';
 import { LearnerProfile } from '../../types';
@@ -90,6 +90,27 @@ export const MobileNav: React.FC<MobileNavProps> = ({
                 </button>
               );
             })}
+
+            {/* ZeroClimber Mobile Item */}
+            <button
+              onClick={() => {
+                onNavigate(profile.zeroClimber ? '/zeroclimber' : '/zeroclimber/onboarding');
+                onClose();
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition mt-2 ${
+                currentRoute === '/zeroclimber' || currentRoute === '/zeroclimber/lesson'
+                  ? 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200'
+                  : 'text-slate-700 hover:bg-emerald-50/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Mountain className="w-5 h-5 text-emerald-600" />
+                <span>ZeroClimber</span>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                V0.1
+              </span>
+            </button>
           </div>
         </div>
 

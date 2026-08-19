@@ -9,7 +9,8 @@ import {
   ShieldCheck, 
   ChevronRight,
   BrainCircuit,
-  PenTool
+  PenTool,
+  Mountain
 } from 'lucide-react';
 import { AppRoute } from '../../types/routes';
 import { PRIMARY_NAV_ITEMS } from '../navigation/routes';
@@ -36,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       case 'BookOpen': return <BookOpen className={iconClass} />;
       case 'TrendingUp': return <TrendingUp className={iconClass} />;
       case 'User': return <User className={iconClass} />;
+      case 'Mountain': return <Mountain className={`w-5 h-5 ${isActive ? 'text-emerald-600' : 'text-slate-500 group-hover:text-slate-800'}`} />;
       default: return <Activity className={iconClass} />;
     }
   };
@@ -51,6 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return true;
     }
     if (route === '/progress' && (currentRoute === '/progress' || currentRoute === '/retest')) {
+      return true;
+    }
+    if (route === '/zeroclimber' && (currentRoute === '/zeroclimber' || currentRoute === '/zeroclimber/lesson' || currentRoute === '/zeroclimber/onboarding')) {
       return true;
     }
     return currentRoute === route;
@@ -103,6 +108,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             );
           })}
+
+          {/* ZeroClimber Entry Tab */}
+          <button
+            onClick={() => onNavigate(profile.zeroClimber ? '/zeroclimber' : '/zeroclimber/onboarding')}
+            className={`w-full group flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition mt-2 ${
+              isItemActive('/zeroclimber')
+                ? 'bg-emerald-50 text-emerald-900 font-bold border border-emerald-200'
+                : 'text-slate-700 hover:bg-emerald-50/60 hover:text-emerald-900'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Mountain className={`w-5 h-5 ${isItemActive('/zeroclimber') ? 'text-emerald-600' : 'text-emerald-600'}`} />
+              <span>ZeroClimber</span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-xs">
+              V0.1
+            </span>
+          </button>
         </div>
 
         {/* Practice Quick Sub-links */}

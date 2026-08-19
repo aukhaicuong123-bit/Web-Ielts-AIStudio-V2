@@ -18,17 +18,20 @@ import {
   ShieldCheck, 
   Zap, 
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Mountain
 } from 'lucide-react';
 
 export interface OnboardingViewProps {
   initialProfile?: LearnerProfile;
-  onCompleteOnboarding: (profile: LearnerProfile, nextRoute: '/diagnostic' | '/today') => void;
+  onCompleteOnboarding: (profile: LearnerProfile, nextRoute: '/diagnostic' | '/today' | '/zeroclimber') => void;
+  onStartZeroClimber?: () => void;
 }
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({
   initialProfile,
-  onCompleteOnboarding
+  onCompleteOnboarding,
+  onStartZeroClimber
 }) => {
   const [step, setStep] = useState<number>(1);
   const totalSteps = 5;
@@ -202,6 +205,35 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               </div>
 
               <div className="space-y-3">
+                {/* Option 0: Absolute Beginner (ZeroClimber) */}
+                {onStartZeroClimber && (
+                  <div 
+                    onClick={onStartZeroClimber}
+                    className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 hover:bg-emerald-50 cursor-pointer transition shadow-xs flex items-start gap-3 group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white flex-shrink-0 mt-0.5 shadow-xs">
+                      <Mountain className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-emerald-950">
+                          Bắt đầu từ số 0 (ZeroClimber: Leo núi từ Base Camp)
+                        </span>
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                          Khuyên dùng
+                        </span>
+                      </div>
+                      <p className="text-xs text-emerald-800 leading-relaxed">
+                        Dành cho bạn mất gốc hoàn toàn, bắt đầu từ con số 0. Học 10-20 phút/ngày, không áp lực, xây nền tảng vững chắc trước khi vào luyện đề học thuật.
+                      </p>
+                      <div className="pt-1 flex items-center gap-1.5 text-xs font-bold text-emerald-700 group-hover:translate-x-0.5 transition">
+                        <span>Bắt đầu với ZeroClimber</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Option 1: Has official score */}
                 <div 
                   onClick={() => setLevelOption('official_score')}

@@ -1,4 +1,4 @@
-export type IELTSBand = number; // e.g. 4.5 - 9.0
+﻿export type IELTSBand = number; // e.g. 4.5 - 9.0
 
 export type SkillType = 'reading' | 'writing' | 'cross_skill';
 
@@ -260,4 +260,79 @@ export interface LearnerProfile {
     timestamp: string;
     scoreChange?: string;
   }[];
+  zeroClimber?: ZeroClimberProgress;
 }
+
+export type ZeroClimberStartingLevel =
+  | 'zero_foundation'     // Band < 4.0 (Máº¥t gá»‘c / ChÆ°a cÃ³ ná»n táº£ng)
+  | 'elementary_3_4'      // Band 4.0 - 4.5 (Ná»n táº£ng sÆ¡ cáº¥p)
+  | 'intermediate_5_6'    // Band 5.0 - 6.0 (Trung cáº¥p)
+  | 'advanced_6_5_plus';  // Band 6.5+ (NÃ¢ng cao)
+
+export type ZeroClimberTargetBand = 5.0 | 5.5 | 6.0 | 6.5 | 7.0 | 7.5 | 8.0 | 8.5 | 9.0;
+
+export type ZeroClimberDailyMinutes = 10 | 15 | 20 | 30 | 45 | 60;
+
+export type ZeroClimberCampId = 
+  | 'camp_base'    // Basecamp: Ná»n táº£ng cá»‘t lÃµi
+  | 'camp_1'       // Camp 1: Äá»‹nh vá»‹ & Paraphrase
+  | 'camp_2'       // Camp 2: Máº¡ch láº¡c & NhÃ¢n quáº£
+  | 'camp_3'       // Camp 3: Ngá»¯ phÃ¡p phá»©c há»£p & Ranh giá»›i cÃ¢u
+  | 'summit';      // Summit: Kiá»ƒm chá»©ng pháº£n xáº¡ phÃ²ng thi
+
+export interface ZeroClimberLesson {
+  id: string;
+  campId: ZeroClimberCampId | string;
+  lessonNumber: number;
+  title: string;
+  focusSubskill: SubskillId;
+  targetWeakness: string;
+  estimatedMinutes: number;
+  isCompleted: boolean;
+  completedAt?: string;
+  score?: number;
+  pathwayId?: string;
+}
+
+export interface ZeroClimberCamp {
+  id: ZeroClimberCampId | string;
+  name: string;
+  order: number;
+  targetBandRange: string;
+  description: string;
+  totalLessons: number;
+  completedLessons: number;
+  isUnlocked: boolean;
+  lessons?: ZeroClimberLesson[];
+}
+
+export interface DailyClimbRecord {
+  id: string;
+  date: string; // YYYY-MM-DD
+  minutesCompleted: number;
+  lessonId?: string;
+  pathwayId?: string;
+  isClimbGoalMet: boolean;
+  timestamp: string;
+  subskillPracticed?: SubskillId;
+}
+
+export interface ZeroClimberProgress {
+  startingLevel: ZeroClimberStartingLevel;
+  targetBand: number;
+  dailyMinutes: ZeroClimberDailyMinutes;
+  currentCampId: ZeroClimberCampId | string;
+  currentLessonId?: string;
+  currentLessonIndex: number;
+  totalClimbsCompleted: number;
+  dailyClimbs: DailyClimbRecord[];
+  isDailyClimbCompletedToday: boolean;
+  lastClimbDate?: string;
+  unlockedCampIds: string[];
+  completedLessonIds: string[];
+  climbStreakDays: number;
+}
+
+
+
+

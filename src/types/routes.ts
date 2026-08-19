@@ -1,4 +1,4 @@
-export type AppRoute = 
+﻿export type AppRoute = 
   | '/overview'
   | '/dashboard'
   | '/today'
@@ -11,14 +11,17 @@ export type AppRoute =
   | '/retest'
   | '/progress'
   | '/profile'
-  | '/onboarding';
+  | '/onboarding'
+  | '/zeroclimber'
+  | '/zeroclimber/onboarding'
+  | '/zeroclimber/lesson';
 
 export interface RouteState {
   currentRoute: AppRoute;
   params?: Record<string, string>;
 }
 
-export type NavigationItemKey = 'overview' | 'today' | 'practice' | 'progress' | 'profile';
+export type NavigationItemKey = 'overview' | 'today' | 'practice' | 'progress' | 'profile' | 'zeroclimber';
 
 export interface NavigationItem {
   key: NavigationItemKey;
@@ -28,3 +31,4 @@ export interface NavigationItem {
   badge?: string | number;
   description?: string;
 }
+

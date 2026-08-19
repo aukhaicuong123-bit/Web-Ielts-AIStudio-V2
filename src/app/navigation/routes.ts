@@ -1,4 +1,4 @@
-import { AppRoute, NavigationItem } from '../../types/routes';
+﻿import { AppRoute, NavigationItem } from '../../types/routes';
 
 export const PRIMARY_NAV_ITEMS: NavigationItem[] = [
   {
@@ -6,36 +6,36 @@ export const PRIMARY_NAV_ITEMS: NavigationItem[] = [
     label: 'Overview',
     route: '/overview',
     iconName: 'LayoutDashboard',
-    description: 'Bức tranh năng lực & tiến độ tổng quan'
+    description: 'Bá»©c tranh nÄƒng lá»±c & tiáº¿n Ä‘á»™ tá»•ng quan'
   },
   {
     key: 'today',
     label: 'Today',
     route: '/today',
     iconName: 'Zap',
-    badge: 'Ưu tiên',
-    description: 'Phiên học 20-30 phút tối ưu ROI cao nhất hôm nay'
+    badge: 'Æ¯u tiÃªn',
+    description: 'PhiÃªn há»c 20-30 phÃºt tá»‘i Æ°u ROI cao nháº¥t hÃ´m nay'
   },
   {
     key: 'practice',
     label: 'Practice',
     route: '/practice',
     iconName: 'BookOpen',
-    description: 'Luyện tập chuyên sâu Reading & Writing có trích dẫn lỗi'
+    description: 'Luyá»‡n táº­p chuyÃªn sÃ¢u Reading & Writing cÃ³ trÃ­ch dáº«n lá»—i'
   },
   {
     key: 'progress',
     label: 'Progress',
     route: '/progress',
     iconName: 'TrendingUp',
-    description: 'Biên bản đối chứng Re-test & Mastery'
+    description: 'BiÃªn báº£n Ä‘á»‘i chá»©ng Re-test & Mastery'
   },
   {
     key: 'profile',
     label: 'Profile',
     route: '/profile',
     iconName: 'User',
-    description: 'Mục tiêu Band & Cài đặt cá nhân'
+    description: 'Má»¥c tiÃªu Band & CÃ i Ä‘áº·t cÃ¡ nhÃ¢n'
   }
 ];
 
@@ -45,5 +45,9 @@ export const SECONDARY_ROUTES: Record<string, { label: string; parentRoute: AppR
   '/diagnostic': { label: 'Diagnostic Assessment', parentRoute: '/overview' },
   '/diagnostic/results': { label: 'Diagnostic Results', parentRoute: '/overview' },
   '/intervention': { label: 'Micro-Pathway Intervention', parentRoute: '/today' },
-  '/retest': { label: 'Verification Re-Test', parentRoute: '/progress' }
+  '/retest': { label: 'Verification Re-Test', parentRoute: '/progress' },
+  '/zeroclimber': { label: 'ZeroClimber', parentRoute: '/zeroclimber' },
+  '/zeroclimber/onboarding': { label: 'ZeroClimber Onboarding', parentRoute: '/zeroclimber' },
+  '/zeroclimber/lesson': { label: 'ZeroClimber Lesson', parentRoute: '/zeroclimber' }
 };
+

@@ -23,7 +23,7 @@ import {
 
 export interface TodayViewProps {
   profile: LearnerProfile;
-  onStartPathway: (pathwayId: string) => void;
+  onStartPathway: (pathwayId: string, sessionMinutes?: number) => void;
   onNavigate: (route: any) => void;
 }
 
@@ -46,8 +46,10 @@ export const TodayView: React.FC<TodayViewProps> = ({
   });
 
   // Find the exact MicroPathway represented by the pathway model
-  const targetPathwayId = nextAction.targetPathwayId || 'pathway_paraphrase';
-  const matchedPathway = CROSS_SKILL_PATHWAYS.find((p) => p.id === targetPathwayId) || CROSS_SKILL_PATHWAYS[0];
+  const targetPathwayId = nextAction.targetPathwayId;
+const matchedPathway = targetPathwayId
+  ? CROSS_SKILL_PATHWAYS.find((p) => p.id === targetPathwayId)
+  : undefined;
 
   // Find active errors related to this subskill if any
   const matchedError = profile.activeErrors.find((e) => e.subskill === nextAction.targetSubskill);
@@ -56,9 +58,7 @@ export const TodayView: React.FC<TodayViewProps> = ({
     if (action.type === 'diagnostic') {
       onNavigate('/diagnostic');
     } else if (action.targetPathwayId) {
-      onStartPathway(action.targetPathwayId);
-    } else {
-      onStartPathway('pathway_paraphrase');
+      onStartPathway(action.targetPathwayId, selectedMinutes);
     }
   };
 
@@ -212,3 +212,4 @@ export const TodayView: React.FC<TodayViewProps> = ({
     </div>
   );
 };
+

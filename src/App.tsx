@@ -11,6 +11,11 @@ import { PracticeHubView } from './features/practice/PracticeHubView';
 import { ProfileView } from './features/profile/ProfileView';
 import { OnboardingView } from './features/onboarding/OnboardingView';
 
+// ZeroClimber Feature Views
+import { ZeroClimberOnboarding } from './features/zeroclimber/ZeroClimberOnboarding';
+import { ZeroClimberOverview } from './features/zeroclimber/ZeroClimberOverview';
+import { ZeroClimberLessonView } from './features/zeroclimber/ZeroClimberLessonView';
+
 // Existing Rich Interactive Learning Modules
 import { ReadingModule } from './components/ReadingModule';
 import { WritingModule } from './components/WritingModule';
@@ -22,6 +27,7 @@ export default function App() {
   const [profile, setProfile] = useState<LearnerProfile>(() => ProfileService.getProfile());
   const [currentRoute, setCurrentRoute] = useState<AppRoute>(() => {
     const p = ProfileService.getProfile();
+    if (p.zeroClimber) return '/zeroclimber';
     return p.onboardingCompleted ? '/today' : '/onboarding';
   });
   const [activePathwayId, setActivePathwayId] = useState<string>('pathway_paraphrase');
@@ -43,6 +49,13 @@ export default function App() {
     ProfileService.saveProfile(updatedProfile);
   };
 
+  const handleCompleteZeroClimberOnboarding = (updatedProfile: LearnerProfile) => {
+    setProfile(updatedProfile);
+    ProfileService.saveProfile(updatedProfile);
+    setCurrentRoute('/zeroclimber');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleStartPathway = (
   pathwayId: string,
   sessionMinutes = profile.preferredSessionMinutes || profile.dailyAvailableMinutes || 20
@@ -57,12 +70,25 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCompleteOnboarding = (updatedProfile: LearnerProfile, nextRoute: '/diagnostic' | '/today') => {
+  const handleCompleteOnboarding = (updatedProfile: LearnerProfile, nextRoute: '/diagnostic' | '/today' | '/zeroclimber') => {
     setProfile(updatedProfile);
     ProfileService.saveProfile(updatedProfile);
     setCurrentRoute(nextRoute);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // If on ZeroClimber onboarding route
+  if (currentRoute === '/zeroclimber/onboarding') {
+    return (
+      <div className="min-h-screen bg-slate-100/70 antialiased text-slate-800">
+        <ZeroClimberOnboarding
+          initialProfile={profile}
+          onComplete={handleCompleteZeroClimberOnboarding}
+          onCancel={() => handleNavigate(profile.onboardingCompleted ? '/today' : '/onboarding')}
+        />
+      </div>
+    );
+  }
 
   // If on onboarding route or learner profile has not completed onboarding
   if (currentRoute === '/onboarding' || !profile.onboardingCompleted) {
@@ -71,6 +97,7 @@ export default function App() {
         <OnboardingView
           initialProfile={profile}
           onCompleteOnboarding={handleCompleteOnboarding}
+          onStartZeroClimber={() => setCurrentRoute('/zeroclimber/onboarding')}
         />
       </div>
     );
@@ -82,6 +109,25 @@ export default function App() {
       onNavigate={handleNavigate}
       profile={profile}
     >
+      {/* Route: /zeroclimber (Your Climb Overview) */}
+      {currentRoute === '/zeroclimber' && (
+        <ZeroClimberOverview
+          profile={profile}
+          onStartLesson={(lessonId) => handleNavigate('/zeroclimber/lesson')}
+          onNavigateToIelts={() => handleNavigate('/today')}
+          onRestartZeroOnboarding={() => handleNavigate('/zeroclimber/onboarding')}
+        />
+      )}
+
+      {/* Route: /zeroclimber/lesson (Lesson 1 Interactive Practice) */}
+      {currentRoute === '/zeroclimber/lesson' && (
+        <ZeroClimberLessonView
+          profile={profile}
+          onUpdateProfile={handleUpdateProfile}
+          onBackToClimb={() => handleNavigate('/zeroclimber')}
+        />
+      )}
+
       {/* Route: /overview or /dashboard */}
       {(currentRoute === '/overview' || currentRoute === '/dashboard') && (
         <OverviewView
@@ -140,11 +186,12 @@ export default function App() {
       {/* Route: /intervention */}
       {currentRoute === '/intervention' && (
         <MicroPathwayView
-          pathwayId={activePathwayId}
-          profile={profile}
-          onUpdateProfile={handleUpdateProfile}
-          onBackToOptimizer={() => handleNavigate('/today')}
-        />
+  pathwayId={activePathwayId}
+  profile={profile}
+  sessionMinutes={activeSessionMinutes}
+  onUpdateProfile={handleUpdateProfile}
+  onBackToOptimizer={() => handleNavigate('/today')}
+/>
       )}
 
       {/* Route: /progress */}
@@ -172,3 +219,10 @@ export default function App() {
     </AppShell>
   );
 }
+
+
+
+
+
+
+
