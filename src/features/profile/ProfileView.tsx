@@ -235,9 +235,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                   <label className="text-xs font-bold text-slate-700">Ước tính AI / Bằng chứng bài làm</label>
                   <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-indigo-700 flex items-center justify-between">
                     <span>
-                      {profile.aiEvidenceEstimate 
-                        ? `Band ${profile.aiEvidenceEstimate.toFixed(1)}` 
-                        : (profile.currentEstimatedBand ? `Band ${profile.currentEstimatedBand.toFixed(1)}` : 'Chưa có bằng chứng')}
+                      {profile.currentEstimatedBand > 0
+                        ? `Band ${profile.currentEstimatedBand.toFixed(1)}`
+                        : (profile.aiEvidenceEstimate ? `Band ${profile.aiEvidenceEstimate.toFixed(1)}` : 'Ch?a c? b?ng ch?ng')}
                     </span>
                     <span className="text-[10px] text-slate-400 font-sans font-normal">Evidence-Based</span>
                   </div>

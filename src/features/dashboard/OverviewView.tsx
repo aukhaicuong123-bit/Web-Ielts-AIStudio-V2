@@ -106,18 +106,23 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 Mục tiêu: Band {profile.targetBand.toFixed(1)}
               </span>
 
-              {profile.aiEvidenceEstimate ? (
+              {profile.currentEstimatedBand > 0 ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
                   <BrainCircuit className="w-3 h-3 text-emerald-600" />
-                  Ước tính AI: Band {profile.aiEvidenceEstimate.toFixed(1)}
+                  ??c t?nh AI: Band {profile.currentEstimatedBand.toFixed(1)}
+                </span>
+              ) : profile.aiEvidenceEstimate ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-100">
+                  <BrainCircuit className="w-3 h-3 text-emerald-600" />
+                  ??c t?nh AI: Band {profile.aiEvidenceEstimate.toFixed(1)}
                 </span>
               ) : profile.previousOfficialScore ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
-                  Điểm thi thật: Band {profile.previousOfficialScore.toFixed(1)}
+                  ?i?m thi th?t: Band {profile.previousOfficialScore.toFixed(1)}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">
-                  Chưa kiểm tra (Not assessed)
+                  Ch?a ki?m tra (Not assessed)
                 </span>
               )}
 
