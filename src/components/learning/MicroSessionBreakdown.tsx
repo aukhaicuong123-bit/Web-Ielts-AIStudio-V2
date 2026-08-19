@@ -1,6 +1,7 @@
 import React from 'react';
 import { MicroPathway, PathwayStep } from '../../types';
 import { Card } from '../ui/Card';
+import { buildSessionPlan } from '../../engine/session/sessionPlanner';
 import { 
   BookOpen, 
   PenTool, 
@@ -13,7 +14,7 @@ import {
 
 export interface MicroSessionBreakdownProps {
   pathway: MicroPathway;
-  sessionMinutes?: number;
+  sessionMinutes: number;
   className?: string;
 }
 
@@ -22,7 +23,9 @@ export const MicroSessionBreakdown: React.FC<MicroSessionBreakdownProps> = ({
   sessionMinutes,
   className = ''
 }) => {
-  const effectiveMinutes = sessionMinutes ?? pathway.durationMinutes;
+  const effectiveMinutes = sessionMinutes;
+  const sessionPlan = buildSessionPlan(pathway.steps, effectiveMinutes);
+  const activeSteps = sessionPlan.stepIndexes.map((index) => pathway.steps[index]);
   const getStepTypeBadge = (type: PathwayStep['type']) => {
     switch (type) {
       case 'reading_drill':
@@ -63,7 +66,7 @@ export const MicroSessionBreakdown: React.FC<MicroSessionBreakdownProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-slate-900">
-            Cấu trúc phiên học hôm nay ({pathway.steps.length} bước liền mạch)
+            Cấu trúc phiên học hôm nay ({activeSteps.length} bước liền mạch)
           </h3>
           <p className="text-xs text-slate-500">
             Mô hình học tập khép kín từ nhận diện lỗi tới chuyển hóa sang văn bản viết và đối chứng Re-Test.
@@ -75,13 +78,13 @@ export const MicroSessionBreakdown: React.FC<MicroSessionBreakdownProps> = ({
       </div>
 
       <div className="space-y-2.5">
-        {pathway.steps.map((step, idx) => {
+        {activeSteps.map((step, idx) => {
           const typeBadge = getStepTypeBadge(step.type);
           const baseStepMinutes = Math.floor(
-  effectiveMinutes / pathway.steps.length
+  effectiveMinutes / activeSteps.length
 );
 const remainderMinutes =
-  effectiveMinutes % pathway.steps.length;
+  effectiveMinutes % activeSteps.length;
 
 const stepMinutes =
   baseStepMinutes + (idx < remainderMinutes ? 1 : 0);

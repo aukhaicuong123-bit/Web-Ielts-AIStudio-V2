@@ -3,6 +3,7 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import { RetestVerificationEngine } from './src/engine/verification/retestVerification';
 
 dotenv.config();
 
@@ -334,31 +335,32 @@ Hãy phân tích câu trả lời của học viên theo 5 thành phần sau và
 // Verify Re-Test Progress & Calculate Delta
 app.post('/api/verify-retest', async (req, res) => {
   try {
-    const { pathwayId, subskill, scoreBefore, answers, expectedAnswers } = req.body;
+    const {
+      pathwayId,
+      subskill,
+      scoreBefore,
+      answers,
+      expectedAnswers,
+      baselineType,
+      priorAttemptsCount,
+      errorPatternName,
+    } = req.body;
 
-    // Evaluate answers
-    let correctCount = 0;
-    const total = answers.length || 1;
-    for (let i = 0; i < total; i++) {
-      if (answers[i] === expectedAnswers[i]) {
-        correctCount++;
-      }
-    }
-    const scoreAfter = Math.round((correctCount / total) * 100);
-
-    const isVerified = scoreAfter >= 75 || scoreAfter > scoreBefore;
-
-    const summary = isVerified
-      ? `Đã kiểm chứng tiến bộ thành công! Độ chuẩn xác ${subskill} tăng từ ${scoreBefore}% lên ${scoreAfter}%. Lỗi nhận diện trước đây đã được triệt tiêu.`
-      : `Điểm re-test đạt ${scoreAfter}%. Cần tiếp tục luyện tập thêm 1 chu kỳ ngắn để củng cố phản xạ.`;
+    const result = RetestVerificationEngine.evaluateRetest({
+      pathwayId,
+      subskill,
+      scoreBefore,
+      answers: Array.isArray(answers) ? answers : [],
+      expectedAnswers: Array.isArray(expectedAnswers) ? expectedAnswers : [],
+      baselineType,
+      priorAttemptsCount,
+      errorPatternName,
+    });
 
     return res.json({
-      status: isVerified ? 'verified_progress' : 'needs_practice',
-      scoreBefore,
-      scoreAfter,
-      isVerified,
-      summary,
-      timestamp: new Date().toISOString()
+      ...result,
+      isVerified: result.status === 'verified_progress',
+      summary: result.evidenceSummary,
     });
   } catch (error: any) {
     console.error('Error in /api/verify-retest:', error);

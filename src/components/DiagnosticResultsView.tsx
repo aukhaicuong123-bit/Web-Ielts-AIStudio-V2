@@ -220,7 +220,7 @@ export const DiagnosticResultsView: React.FC<DiagnosticResultsViewProps> = ({
         <NextBestActionCard
           action={nextBestAction}
           onStart={onNavigateToToday}
-          ctaText="Bắt đầu phiên học can thiệp hôm nay (20 phút)"
+          ctaText={`Bắt đầu phiên học can thiệp hôm nay (${profile.preferredSessionMinutes} phút)`}
           ctaSubtext="Hệ thống sẽ dẫn dắt từng bước để triệt tiêu điểm nghẽn này."
         />
       </div>

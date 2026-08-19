@@ -621,7 +621,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                   <BrainCircuit className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <strong className="text-slate-900 block font-bold">Khuyến nghị bước tiếp theo:</strong>
-                    Để AI phát hiện chính xác điểm nghẽn (Subskill Weakness) và thiết kế phiên học 20 phút hôm nay, hãy hoàn thành bài khảo sát chẩn đoán 10 phút.
+                    Để AI phát hiện chính xác điểm nghẽn (Subskill Weakness) và thiết kế phiên học {preferredSessionMinutes} phút hôm nay, hãy hoàn thành bài khảo sát chẩn đoán 10 phút.
                   </div>
                 </div>
               </div>

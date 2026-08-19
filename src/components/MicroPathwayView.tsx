@@ -26,6 +26,11 @@ import { SUBSKILLS_DICTIONARY } from '../data/mockContent';
 import { apiService, profileStorage } from '../services/api';
 import { LearningEngine } from '../engine';
 import { buildSessionPlan } from '../engine/session/sessionPlanner';
+import {
+  PathwaySessionDraft,
+  resolveSessionDuration,
+} from '../engine/session/sessionDraft';
+import { applySessionCompletionOnce } from '../engine/session/sessionCompletion';
 
 interface MicroPathwayViewProps {
   pathwayId: string;
@@ -69,9 +74,12 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
 
   // Session persistence banner state
   const [hasResumedSession, setHasResumedSession] = useState<boolean>(false);
+  const [sessionDurationMinutes, setSessionDurationMinutes] = useState<number>(sessionMinutes);
+  const [hydratedPathwayId, setHydratedPathwayId] = useState<string | null>(null);
+  const [completionRecordedAt, setCompletionRecordedAt] = useState<string | undefined>(undefined);
 
   const pathway = CROSS_SKILL_PATHWAYS.find((p) => p.id === activePathwayId) || CROSS_SKILL_PATHWAYS[0];
-  const sessionPlan = buildSessionPlan(pathway.steps, sessionMinutes);
+  const sessionPlan = buildSessionPlan(pathway.steps, sessionDurationMinutes);
   const allowedStepIndexes = new Set(sessionPlan.stepIndexes);
   const currentStep = pathway.steps[currentStepIdx] || pathway.steps[0];
   const subskillInfo = SUBSKILLS_DICTIONARY[pathway.triggerSubskill];
@@ -86,7 +94,7 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
     if (currentStepIdx > maxAllowedStep) {
       setCurrentStepIdx(maxAllowedStep);
     }
-  }, [currentStepIdx, sessionMinutes, pathway.id]);
+  }, [currentStepIdx, sessionDurationMinutes, pathway.id]);
 
   // Load saved session on mount or pathway switch
   useEffect(() => {
@@ -95,6 +103,11 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
       if (savedRaw) {
         const saved = JSON.parse(savedRaw);
         if (saved && saved.pathwayId === pathway.id) {
+          const resumedDuration = resolveSessionDuration(
+            saved.sessionMinutes,
+            profile.preferredSessionMinutes
+          );
+          setSessionDurationMinutes(resumedDuration);
           if (typeof saved.currentStepIdx === 'number') setCurrentStepIdx(saved.currentStepIdx);
           if (saved.step1SelectedIdx !== undefined) setStep1SelectedIdx(saved.step1SelectedIdx);
           if (saved.step2Input) setStep2Input(saved.step2Input);
@@ -107,20 +120,31 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
             const calculatedNextAction = LearningEngine.recommendation.getNextBestAction(profile);
             setNextActionAfterRetest(calculatedNextAction);
           }
+          if (typeof saved.completionRecordedAt === 'string') {
+            setCompletionRecordedAt(saved.completionRecordedAt);
+          }
           setHasResumedSession(true);
+          setHydratedPathwayId(pathway.id);
+          return;
         }
       }
+
+      setSessionDurationMinutes(sessionMinutes);
+      setHydratedPathwayId(pathway.id);
     } catch (e) {
       console.warn('Could not load saved pathway session', e);
+      setSessionDurationMinutes(sessionMinutes);
+      setHydratedPathwayId(pathway.id);
     }
   }, [pathway.id]);
 
   // Save session state to localStorage
   useEffect(() => {
-    if (!pathway) return;
+    if (!pathway || hydratedPathwayId !== pathway.id) return;
     try {
-      const sessionData = {
+      const sessionData: PathwaySessionDraft = {
         pathwayId: pathway.id,
+        sessionMinutes: sessionDurationMinutes,
         currentStepIdx,
         step1SelectedIdx,
         step2Input,
@@ -129,6 +153,7 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
         step3Evaluation,
         retestAnswers,
         retestResult,
+        completionRecordedAt,
         updatedAt: new Date().toISOString()
       };
       localStorage.setItem(`pathway_session_${pathway.id}`, JSON.stringify(sessionData));
@@ -137,6 +162,8 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
     }
   }, [
     pathway.id,
+    sessionDurationMinutes,
+    hydratedPathwayId,
     currentStepIdx,
     step1SelectedIdx,
     step2Input,
@@ -144,8 +171,57 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
     step3Input,
     step3Evaluation,
     retestAnswers,
-    retestResult
+    retestResult,
+    completionRecordedAt
   ]);
+
+  const recordSessionCompletion = (baseProfile: LearnerProfile): LearnerProfile => {
+    let persistedCompletionAt: string | undefined = completionRecordedAt;
+
+    try {
+      const savedRaw = localStorage.getItem(`pathway_session_${pathway.id}`);
+      const saved = savedRaw ? JSON.parse(savedRaw) : null;
+      if (typeof saved?.completionRecordedAt === 'string') {
+        persistedCompletionAt = saved.completionRecordedAt;
+      }
+    } catch (e) {
+      console.warn('Could not read pathway completion marker', e);
+    }
+
+    const completion = applySessionCompletionOnce(
+      baseProfile,
+      sessionDurationMinutes,
+      persistedCompletionAt
+    );
+
+    if (!completion.recorded) {
+      setCompletionRecordedAt(persistedCompletionAt);
+      return baseProfile;
+    }
+
+    const recordedAt = new Date().toISOString();
+    try {
+      const savedRaw = localStorage.getItem(`pathway_session_${pathway.id}`);
+      const saved = savedRaw ? JSON.parse(savedRaw) : {};
+      localStorage.setItem(
+        `pathway_session_${pathway.id}`,
+        JSON.stringify({
+          ...saved,
+          pathwayId: pathway.id,
+          sessionMinutes: sessionDurationMinutes,
+          completionRecordedAt: recordedAt,
+          updatedAt: recordedAt
+        })
+      );
+    } catch (e) {
+      console.warn('Could not persist pathway completion marker', e);
+    }
+
+    setCompletionRecordedAt(recordedAt);
+    profileStorage.saveProfile(completion.profile);
+    onUpdateProfile(completion.profile);
+    return completion.profile;
+  };
 
   // Handle Step 2 Evaluation (Guided Transformation)
   const handleEvaluateStep2 = async () => {
@@ -191,6 +267,7 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
 
   // Handle Step 4 Finish (Re-Test Verification - Authoritative single source of truth)
   const handleFinishRetest = async () => {
+    if (isSubmittingRetest || retestResult || completionRecordedAt) return;
     setIsSubmittingRetest(true);
     setRetestError(null);
 
@@ -207,20 +284,19 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
         scoreBefore,
         answers: answersList,
         expectedAnswers: expectedList,
+        baselineType: 'mastery_estimate',
         priorAttemptsCount: matchedActiveError ? matchedActiveError.count : 3,
         errorPatternName: pathway.targetWeakness || subskillInfo?.targetWeakness
       });
 
       // Apply verified updates to learner profile (Bayesian update, error memory resolution)
       const updatedProfile = LearningEngine.verification.applyVerificationToProfile(profile, newRetestRecord);
+      const completedProfile = recordSessionCompletion(updatedProfile);
 
-      // Save updated profile
-      profileStorage.saveProfile(updatedProfile);
-      onUpdateProfile(updatedProfile);
       setRetestResult(newRetestRecord);
 
       // Immediately calculate Next Best Action for the newly adapted profile
-      const nextAction = LearningEngine.recommendation.getNextBestAction(updatedProfile);
+      const nextAction = LearningEngine.recommendation.getNextBestAction(completedProfile);
       setNextActionAfterRetest(nextAction);
     } catch (err: any) {
       console.error(err);
@@ -244,6 +320,7 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
     setRetestError(null);
     setNextActionAfterRetest(null);
     setHasResumedSession(false);
+    setCompletionRecordedAt(undefined);
     try {
       localStorage.removeItem(`pathway_session_${pathway.id}`);
     } catch (e) {}
@@ -267,7 +344,7 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
               
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 text-[11px] font-bold uppercase tracking-wider">
                 <GitMerge className="w-3 h-3" />
-                Micro-Pathway Can Thiệp 15-20 Phút
+                Micro-Pathway Can Thiệp ({sessionDurationMinutes} Phút)
               </span>
 
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-medium">
@@ -288,7 +365,7 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
           <div className="flex flex-col sm:items-end gap-2 flex-shrink-0">
             <span className="inline-flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700">
               <Clock className="w-3.5 h-3.5 text-indigo-600" />
-              <span>{sessionMinutes} phút</span>
+              <span>{sessionDurationMinutes} phút</span>
             </span>
 
             {matchedActiveError && (
@@ -357,7 +434,8 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
       {/* 2. Step Tracker Indicator */}
       <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-2xs">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          {pathway.steps.map((step, sIdx) => {
+          {sessionPlan.stepIndexes.map((sIdx) => {
+            const step = pathway.steps[sIdx];
             const isCompleted = currentStepIdx > sIdx || retestResult !== null;
             const isCurrent = currentStepIdx === sIdx && retestResult === null;
 
@@ -849,6 +927,7 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
                   if (sessionPlan.includesRetest && step3Evaluation) {
                     setCurrentStepIdx(3);
                   } else if (!sessionPlan.includesRetest) {
+                    recordSessionCompletion(profile);
                     onBackToOptimizer();
                   }
                 }}

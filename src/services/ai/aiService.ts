@@ -30,7 +30,7 @@ export interface StepEvaluationResponse {
 }
 
 export interface ReTestVerificationResponse {
-  status: 'verified_progress' | 'needs_practice';
+  status: 'verified_progress' | 'partial_progress' | 'needs_practice';
   scoreBefore: number;
   scoreAfter: number;
   isVerified: boolean;

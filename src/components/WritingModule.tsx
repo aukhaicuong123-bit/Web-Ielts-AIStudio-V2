@@ -718,7 +718,7 @@ export const WritingModule: React.FC<WritingModuleProps> = ({
                         <Zap className="w-4 h-4 text-indigo-600" /> Can thiệp ưu tiên số 1 (Next Best Action):
                       </div>
                       <span className="text-[11px] text-indigo-700 font-semibold bg-white px-2 py-0.5 rounded-full border border-indigo-200">
-                        15-20 phút
+                        {profile.preferredSessionMinutes} phút
                       </span>
                     </div>
 

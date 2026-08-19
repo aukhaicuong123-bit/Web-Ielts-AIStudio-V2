@@ -11,6 +11,7 @@ export interface RetestEvaluationInput {
   expectedAnswers: any[];
   priorAttemptsCount?: number;
   errorPatternName?: string;
+  /** The baseline currently available to the live pathway is a mastery estimate. */
   baselineType?: 'mastery_estimate' | 'matched_assessment';
 }
 
@@ -20,6 +21,10 @@ export class RetestVerificationEngine {
    */
   static evaluateRetest(input: RetestEvaluationInput): ReTestResult {
     const total = Math.max(1, input.expectedAnswers.length);
+    const hasCompleteAnswers =
+      input.expectedAnswers.length > 0 &&
+      input.answers.length === input.expectedAnswers.length &&
+      input.answers.every((answer) => answer !== undefined && answer !== null);
     let correctCount = 0;
 
     for (let i = 0; i < total; i++) {
@@ -28,10 +33,18 @@ export class RetestVerificationEngine {
       }
     }
 
-    const scoreAfter = Math.round((correctCount / total) * 100);
+    const scoreAfter = hasCompleteAnswers
+      ? Math.round((correctCount / total) * 100)
+      : 0;
     const delta = scoreAfter - input.scoreBefore;
+    const baselineType = input.baselineType || 'mastery_estimate';
     const verificationEligible =
-      input.baselineType === 'matched_assessment' && total >= 5;
+      (baselineType === 'matched_assessment' && total >= 5) ||
+      (baselineType === 'mastery_estimate' &&
+        total === 2 &&
+        hasCompleteAnswers &&
+        scoreAfter === 100 &&
+        delta >= 20);
     const subskillInfo = SUBSKILLS_DICTIONARY[input.subskill];
     const subskillName = subskillInfo?.name || input.subskill;
     const weaknessName = input.errorPatternName || subskillInfo?.targetWeakness || 'Điểm nghẽn học thuật';
@@ -48,16 +61,20 @@ export class RetestVerificationEngine {
       status = 'verified_progress';
       evidenceSummary = `Đã kiểm chứng tiến bộ thành công! Độ chuẩn xác ${subskillName} tăng từ ${input.scoreBefore}% lên ${scoreAfter}% (+${Math.max(0, delta)}%). Dấu hiệu sai lầm trước đây đã được triệt tiêu qua bài kiểm tra đối chứng.`;
       whatHappened = `Độ chuẩn xác ${subskillName} của bạn đã tăng từ ${input.scoreBefore}% lên ${scoreAfter}% (+${Math.max(0, delta)}%).`;
-      whatChanged = `Can thiệp 15-20 phút đã triệt tiêu thành công điểm nghẽn "${weaknessName}". Dữ liệu đối chứng Re-test xác nhận phản xạ học thuật đã được hình thành.`;
-    } else if (!verificationEligible && scoreAfter >= 50) {
+      whatChanged = `Can thiệp đã triệt tiêu thành công điểm nghẽn "${weaknessName}". Dữ liệu đối chứng Re-test xác nhận phản xạ học thuật đã được hình thành.`;
+    } else if (hasCompleteAnswers && scoreAfter >= 50) {
       status = 'partial_progress';
       evidenceSummary = `Tiến bộ bước đầu: Điểm đạt ${scoreAfter}% (tăng +${Math.max(0, delta)}% so với trước can thiệp). Cần thêm 1 chu kỳ củng cố ngắn để chuyển hóa hoàn toàn thành kỹ năng bền vững.`;
       whatHappened = `Điểm Re-test đạt ${scoreAfter}%, ghi nhận mức tăng +${Math.max(0, delta)}% so với trước can thiệp (${input.scoreBefore}%).`;
       whatChanged = `Bạn đã nắm được phương pháp nhận diện cốt lõi nhưng tốc độ xử lý hoặc độ bao quát các trường hợp ngoại lệ vẫn cần thêm bài tập củng cố.`;
     } else {
       status = 'needs_practice';
-      evidenceSummary = `Điểm Re-test đạt ${scoreAfter}%. Chưa đạt ngưỡng triệt tiêu điểm nghẽn. Hệ thống sẽ tiếp tục ưu tiên bài tập bổ trợ cho kỹ năng này trong lộ trình tiếp theo.`;
-      whatHappened = `Điểm Re-test đạt ${scoreAfter}%, chưa ghi nhận sự tăng trưởng rõ rệt so với mức trước can thiệp (${input.scoreBefore}%).`;
+      evidenceSummary = hasCompleteAnswers
+        ? `Điểm Re-test đạt ${scoreAfter}%. Chưa đạt ngưỡng triệt tiêu điểm nghẽn. Hệ thống sẽ tiếp tục ưu tiên bài tập bổ trợ cho kỹ năng này trong lộ trình tiếp theo.`
+        : 'Bài Re-test chưa đầy đủ nên chưa thể xác nhận tiến bộ. Hệ thống sẽ giữ nguyên điểm nghẽn và ưu tiên luyện tập bổ trợ.';
+      whatHappened = hasCompleteAnswers
+        ? `Điểm Re-test đạt ${scoreAfter}%, chưa ghi nhận sự tăng trưởng rõ rệt so với mức trước can thiệp (${input.scoreBefore}%).`
+        : 'Bài Re-test chưa được hoàn thành đầy đủ nên chưa thể đánh giá tiến bộ.';
       whatChanged = `Điểm nghẽn "${weaknessName}" vẫn còn tồn tại trong bài làm mới. Bạn cần xem lại nguyên tắc chuyển giao và thử nghiệm với bài tập mẫu có mức độ phân hóa khác.`;
     }
 
@@ -75,7 +92,7 @@ export class RetestVerificationEngine {
       errorsDetectedAfter: status === 'verified_progress' ? [] : [`Cần củng cố thêm ${weaknessName}`],
       status,
       evidenceSummary,
-      improvementDelta: verificationEligible ? Math.max(0, delta) : 0,
+      improvementDelta: Math.max(0, delta),
       evidenceCount: {
         priorAttempts,
         interventions: 1,
@@ -176,8 +193,6 @@ if (retestResult.status === 'verified_progress') {
       errorPatterns: updatedErrorPatterns.length > 0 ? updatedErrorPatterns : profile.errorPatterns,
       reTestHistory: updatedReTestHistory,
       recentActivity: updatedActivity,
-      minutesStudiedToday: profile.minutesStudiedToday + 15,
-      completedSessions: profile.completedSessions + 1
     };
   }
 }
