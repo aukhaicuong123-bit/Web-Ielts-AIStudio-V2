@@ -11,6 +11,7 @@ export interface RetestEvaluationInput {
   expectedAnswers: any[];
   priorAttemptsCount?: number;
   errorPatternName?: string;
+  baselineType?: 'mastery_estimate' | 'matched_assessment';
 }
 
 export class RetestVerificationEngine {
@@ -29,6 +30,8 @@ export class RetestVerificationEngine {
 
     const scoreAfter = Math.round((correctCount / total) * 100);
     const delta = scoreAfter - input.scoreBefore;
+    const verificationEligible =
+      input.baselineType === 'matched_assessment' && total >= 5;
     const subskillInfo = SUBSKILLS_DICTIONARY[input.subskill];
     const subskillName = subskillInfo?.name || input.subskill;
     const weaknessName = input.errorPatternName || subskillInfo?.targetWeakness || 'Điểm nghẽn học thuật';
@@ -38,12 +41,15 @@ export class RetestVerificationEngine {
     let whatHappened = '';
     let whatChanged = '';
 
-    if (scoreAfter >= 75 || (delta >= 20 && scoreAfter >= 60)) {
+    if (
+      verificationEligible &&
+      (scoreAfter >= 75 || (delta >= 20 && scoreAfter >= 60))
+    ) {
       status = 'verified_progress';
       evidenceSummary = `Đã kiểm chứng tiến bộ thành công! Độ chuẩn xác ${subskillName} tăng từ ${input.scoreBefore}% lên ${scoreAfter}% (+${Math.max(0, delta)}%). Dấu hiệu sai lầm trước đây đã được triệt tiêu qua bài kiểm tra đối chứng.`;
       whatHappened = `Độ chuẩn xác ${subskillName} của bạn đã tăng từ ${input.scoreBefore}% lên ${scoreAfter}% (+${Math.max(0, delta)}%).`;
       whatChanged = `Can thiệp 15-20 phút đã triệt tiêu thành công điểm nghẽn "${weaknessName}". Dữ liệu đối chứng Re-test xác nhận phản xạ học thuật đã được hình thành.`;
-    } else if (scoreAfter > input.scoreBefore || scoreAfter >= 50) {
+    } else if (!verificationEligible && scoreAfter >= 50) {
       status = 'partial_progress';
       evidenceSummary = `Tiến bộ bước đầu: Điểm đạt ${scoreAfter}% (tăng +${Math.max(0, delta)}% so với trước can thiệp). Cần thêm 1 chu kỳ củng cố ngắn để chuyển hóa hoàn toàn thành kỹ năng bền vững.`;
       whatHappened = `Điểm Re-test đạt ${scoreAfter}%, ghi nhận mức tăng +${Math.max(0, delta)}% so với trước can thiệp (${input.scoreBefore}%).`;
@@ -69,7 +75,7 @@ export class RetestVerificationEngine {
       errorsDetectedAfter: status === 'verified_progress' ? [] : [`Cần củng cố thêm ${weaknessName}`],
       status,
       evidenceSummary,
-      improvementDelta: Math.max(0, delta),
+      improvementDelta: verificationEligible ? Math.max(0, delta) : 0,
       evidenceCount: {
         priorAttempts,
         interventions: 1,
