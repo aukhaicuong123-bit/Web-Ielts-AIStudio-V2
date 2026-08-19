@@ -287,9 +287,48 @@ Hãy phân tích câu trả lời của học viên theo 5 thành phần sau và
     }
     return res.json(parsed);
   } catch (error: any) {
+    const status = Number(error?.status);
+    const rawMessage = String(error?.message || '');
+
+    const isQuotaError =
+      status === 429 &&
+      /RESOURCE_EXHAUSTED|quota exceeded|generate_content_free_tier/i.test(rawMessage);
+
+    if (isQuotaError) {
+      console.warn(
+        '[AI] /api/evaluate-step-submission quota exhausted (HTTP 429)'
+      );
+
+      return res.status(429).json({
+        error: {
+          code: 429,
+          message: 'AI quota exhausted',
+          status: 'RESOURCE_EXHAUSTED'
+        }
+      });
+    }
+
+    if ([502, 503, 504].includes(status)) {
+      console.warn(
+        `[AI] /api/evaluate-step-submission unavailable (HTTP ${status})`
+      );
+
+      return res.status(status).json({
+        error: {
+          code: status,
+          message: 'AI service temporarily unavailable',
+          status: 'UNAVAILABLE'
+        }
+      });
+    }
+
     console.error('Error in /api/evaluate-step-submission:', error);
-    return res.status(500).json({ error: error.message || 'Không thể đánh giá câu trả lời.' });
+
+    return res.status(500).json({
+      error: error?.message || 'AI evaluation failed. Please try again.'
+    });
   }
+
 });
 
 // Verify Re-Test Progress & Calculate Delta

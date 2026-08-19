@@ -995,9 +995,9 @@ export const MicroPathwayView: React.FC<MicroPathwayViewProps> = ({
                     <span className="text-3xl font-extrabold text-emerald-700">{retestResult.scoreAfter}%</span>
                   </div>
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                    <span className="text-xs text-indigo-800 block mb-1 font-semibold">Độ Tăng Trưởng (Delta)</span>
+                    <span className="text-xs text-indigo-800 block mb-1 font-semibold">Observed Score Change</span>
                     <span className="text-2xl font-extrabold text-indigo-700">
-                      {retestResult.improvementDelta >= 0 ? '+' : ''}{retestResult.improvementDelta}%
+                      {retestResult.scoreAfter - retestResult.scoreBefore >= 0 ? '+' : ''}{retestResult.scoreAfter - retestResult.scoreBefore}%
                     </span>
                   </div>
                 </div>

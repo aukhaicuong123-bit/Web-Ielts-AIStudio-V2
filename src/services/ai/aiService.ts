@@ -190,7 +190,28 @@ export class AIService {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Request failed' }));
-      throw new Error(err.error || 'Lỗi khi chấm bài tập can thiệp');
+
+      const errorMessage =
+        typeof err.error === 'string'
+          ? err.error
+          : err.error?.message || '';
+
+      if ([502, 503, 504].includes(res.status)) {
+        throw new Error("Dịch vụ AI đang quá tải tạm thời. Câu trả lời của bạn vẫn được giữ lại; hãy thử thẩm định lại sau.");
+      }
+
+      if (
+        res.status === 429 &&
+        /quota exhausted|quota exceeded|GenerateRequestsPerDay|free.?tier|RESOURCE_EXHAUSTED/i.test(
+          errorMessage
+        )
+      ) {
+        throw new Error("AI đã hết hạn mức miễn phí cho phiên này. Bài làm của bạn vẫn được giữ lại; hãy thử lại sau khi quota được cấp lại.");
+      }
+
+      throw new Error(
+        errorMessage || 'AI evaluation failed. Please try again.'
+      );
     }
 
     const json = await res.json();
