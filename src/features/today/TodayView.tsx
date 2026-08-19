@@ -25,12 +25,14 @@ export interface TodayViewProps {
   profile: LearnerProfile;
   onStartPathway: (pathwayId: string, sessionMinutes?: number) => void;
   onNavigate: (route: any) => void;
+  onUpdateProfile: (profile: LearnerProfile) => void;
 }
 
 export const TodayView: React.FC<TodayViewProps> = ({
   profile,
   onStartPathway,
-  onNavigate
+  onNavigate,
+  onUpdateProfile
 }) => {
   const [selectedMinutes, setSelectedMinutes] = useState<number>(
     profile.preferredSessionMinutes || profile.dailyAvailableMinutes || 20
@@ -60,6 +62,14 @@ const matchedPathway = targetPathwayId
     } else if (action.targetPathwayId) {
       onStartPathway(action.targetPathwayId, selectedMinutes);
     }
+  };
+
+  const handleSessionMinutesChange = (minutes: number) => {
+    setSelectedMinutes(minutes);
+    onUpdateProfile({
+      ...profile,
+      preferredSessionMinutes: minutes,
+    });
   };
 
   return (
@@ -96,7 +106,7 @@ const matchedPathway = targetPathwayId
               <button
                 key={mins}
                 id={`time-btn-${mins}m`}
-                onClick={() => setSelectedMinutes(mins)}
+                onClick={() => handleSessionMinutesChange(mins)}
                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition ${
                   selectedMinutes === mins
                     ? 'bg-white text-slate-900 shadow-xs border border-slate-200'

@@ -143,6 +143,7 @@ export default function App() {
           profile={profile}
           onStartPathway={handleStartPathway}
           onNavigate={handleNavigate}
+          onUpdateProfile={handleUpdateProfile}
         />
       )}
 

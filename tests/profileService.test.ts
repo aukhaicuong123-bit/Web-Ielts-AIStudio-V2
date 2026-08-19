@@ -52,6 +52,18 @@ test('saveProfile preserves an explicitly updated currentEstimatedBand across re
   );
 });
 
+test('saveProfile preserves an updated preferred session duration across reload', () => {
+  globalThis.localStorage.clear();
+  const profile = createUnassessedProfile({
+    id: 'test_learner_session_duration',
+    preferredSessionMinutes: 30,
+  });
+
+  ProfileService.saveProfile(profile);
+
+  assert.equal(ProfileService.getProfile().preferredSessionMinutes, 30);
+});
+
 
 test('fresh storage returns an unassessed learner instead of the demo profile', () => {
   globalThis.localStorage.clear();
