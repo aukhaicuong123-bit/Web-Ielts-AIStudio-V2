@@ -176,7 +176,11 @@ export class ProfileService {
           dailyGoalMinutes: Number(parsed.dailyAvailableMinutes) || Number(parsed.dailyGoalMinutes) || 20,
           currentLevelType: parsed.currentLevelType || (parsed.previousOfficialScore ? 'official_score' : parsed.hasCompletedDiagnostic ? 'estimated_score' : 'not_assessed'),
           assessmentStatus: parsed.assessmentStatus || (parsed.hasCompletedDiagnostic ? 'diagnostic_completed' : 'not_assessed'),
-          currentEstimatedBand: parsed.aiEvidenceEstimate || parsed.currentEstimatedBand || (parsed.previousOfficialScore ? parsed.previousOfficialScore : (parsed.hasCompletedDiagnostic ? 5.5 : 0)),
+          currentEstimatedBand:
+            parsed.currentEstimatedBand ??
+            parsed.aiEvidenceEstimate ??
+            parsed.previousOfficialScore ??
+            (parsed.hasCompletedDiagnostic ? 5.5 : 0),
           onboardingCompleted: parsed.onboardingCompleted !== undefined ? parsed.onboardingCompleted : true
         };
         return normalized;
@@ -208,7 +212,11 @@ export class ProfileService {
         dailyGoalMinutes: Number(profile.dailyAvailableMinutes || profile.dailyGoalMinutes || 20),
         dailyAvailableMinutes: Number(profile.dailyAvailableMinutes || 20),
         preferredSessionMinutes: Number(profile.preferredSessionMinutes || 20),
-        currentEstimatedBand: profile.aiEvidenceEstimate || (profile.previousOfficialScore ? profile.previousOfficialScore : (profile.hasCompletedDiagnostic ? 5.5 : 0))
+        currentEstimatedBand:
+          profile.currentEstimatedBand ??
+          profile.aiEvidenceEstimate ??
+          profile.previousOfficialScore ??
+          (profile.hasCompletedDiagnostic ? 5.5 : 0)
       };
       localStorage.setItem(PROFILE_KEY, JSON.stringify(payload));
     } catch (e) {
