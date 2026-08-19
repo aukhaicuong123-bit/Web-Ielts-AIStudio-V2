@@ -6,6 +6,7 @@ import {
 } from '../../types';
 import { SUBSKILLS_DICTIONARY } from '../../data/mockContent';
 import { CROSS_SKILL_PATHWAYS } from '../../data/pathways';
+import { buildSessionPlan } from '../session/sessionPlanner';
 
 export interface PrioritizationOptions {
   availableMinutes?: number;
@@ -232,6 +233,10 @@ export class PrioritizationEngine {
       ? CROSS_SKILL_PATHWAYS.find((pathway) => pathway.id === matchedPathwayId)
       : undefined;
 
+
+    const sessionPlan = matchedPathway
+      ? buildSessionPlan(matchedPathway.steps, availableMinutes)
+      : undefined;
     // 3. Build Explainability Reasoning Bullets
     const reasons: string[] = [];
 
@@ -242,9 +247,12 @@ export class PrioritizationEngine {
       reasons.push('Kỹ năng nền tảng có tác động chéo lớn nhất đến cả Reading và Writing');
     }
     if (topCandidate.mastery < targetMasteryThreshold) {
-      reasons.push(`Độ thuần thục hiện tại (${topCandidate.mastery}%) dưới ngưỡng an toàn Band ${profile.targetBand.toFixed(1)} (yêu cầu ${targetMasteryThreshold}%)`);
+      reasons.push(
+      sessionPlan?.includesRetest
+        ? `Phiên học ${availableMinutes} phút bao gồm đủ chu trình can thiệp và Re-Test đối chứng.`
+        : `Phiên học ${availableMinutes} phút được rút gọn thành can thiệp nhanh, chưa bao gồm Re-Test đối chứng.`
+    );
     }
-    reasons.push(`Phiên học được phân bổ theo ngân sách ${availableMinutes} phút bạn đã chọn, bao gồm cả bước Re-Test đối chứng`);
     if (topCandidate.previousRetest && topCandidate.previousRetest.status === 'needs_practice') {
       reasons.push('Biên bản Re-test gần nhất cho thấy cần thêm 1 vòng luyện tập để củng cố phản xạ');
     }
@@ -272,7 +280,9 @@ export class PrioritizationEngine {
       reasons,
       evidenceContext: topCandidate.matchedError?.name || topCandidate.info?.targetWeakness,
       expectedOutcome: matchedPathway
-        ? `Target improvement for ${topCandidate.info?.name || 'the skill'} will be verified through Re-test evidence.`
+        ? sessionPlan?.includesRetest
+          ? `Tiến bộ của ${topCandidate.info?.name || 'kỹ năng này'} sẽ được kiểm chứng bằng Re-Test trong chính phiên ${availableMinutes} phút.`
+          : `Phiên ${availableMinutes} phút tập trung sửa ${topCandidate.info?.name || topCandidate.subskillId}; Re-Test sẽ được dành cho một phiên đủ thời lượng.`
         : `Focused practice for ${topCandidate.info?.name || topCandidate.subskillId} within the ${availableMinutes}-minute session.`
     };
   }
