@@ -1,9 +1,10 @@
-import express from 'express';
+﻿import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import { GoogleGenAI, Type } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { RetestVerificationEngine } from './src/engine/verification/retestVerification';
+import { learnerStateRouter } from './src/server/learnerStateRoutes';
 
 dotenv.config();
 
@@ -29,6 +30,9 @@ function getGeminiClient(): GoogleGenAI {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
+
+// Learner state API
+app.use('/api/learner-state', learnerStateRouter);
 
 // Analyze Writing (Task 1 / Task 2) with Evidence-Based Rubric Feedback
 app.post('/api/analyze-writing', async (req, res) => {
@@ -389,3 +393,4 @@ app.listen(PORT, HOST, () => {
 }
 
 startServer();
+
