@@ -1,10 +1,22 @@
-import pg from 'pg';
+﻿import pg from 'pg';
 import 'dotenv/config';
 
 const { Pool } = pg;
 
-if (!process.env.PGHOST || !process.env.PGPORT || !process.env.PGDATABASE || !process.env.PGUSER || !process.env.PGPASSWORD) {
-  throw new Error('PostgreSQL environment variables are not fully configured');
+const requiredEnv = [
+  'PGHOST',
+  'PGPORT',
+  'PGDATABASE',
+  'PGUSER',
+  'PGPASSWORD',
+] as const;
+
+const missingEnv = requiredEnv.filter((key) => !process.env[key]);
+
+if (missingEnv.length > 0) {
+  throw new Error(
+    `PostgreSQL environment variables are missing at runtime: ${missingEnv.join(', ')}`
+  );
 }
 
 export const pool = new Pool({
